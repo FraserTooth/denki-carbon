@@ -1,0 +1,19 @@
+meta {
+  name: post
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": 1,
+    "displayName": "fish",
+    "email": "test@example.com"
+  }
+}
