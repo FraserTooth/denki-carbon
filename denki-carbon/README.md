@@ -10,7 +10,9 @@
 To start the development server locally run:
 
 ```bash
-bun run dev
+bun dev
 ```
 
-Open http://localhost:3000/ with your browser to see the result.
+Open http://localhost:3000/docs with your browser to see the docs
+
+To run it in a dock
