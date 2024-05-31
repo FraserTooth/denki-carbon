@@ -40,3 +40,9 @@ yarn-error.log*
 **/*.log
 package-lock.json
 **/*.bun
+
+.env
+.env.local
+.env.local.docker
+.env.development
+.env.production

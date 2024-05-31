@@ -2,11 +2,12 @@
 
 ## Getting Started
 
-Install bun at https://bun.sh/
+- Install bun at https://bun.sh/
+- Set up a postgres database locally
 
 ## Development
 
-To start the development server run:
+To start the development server locally run:
 
 ```bash
 bun run dev

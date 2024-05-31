@@ -4,8 +4,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build ./src/index.ts --outdir ./build --target bun",
     "generate": "bun drizzle-kit generate",
-    "migrate": "bun run ./src/migrate.ts"
+    "migrate": "bun run ./src/migrate.ts",
+    "docker:build": "docker build --pull -t denki-carbon .",
+    "docker:run": "docker run -d -p 3000:3000 denki-carbon",
+    "docker:stop": "docker stop $(docker ps -a -q --filter ancestor=denki-carbon)",
+    "docker:logs": "docker logs --follow $(docker ps -a -q --filter ancestor=denki-carbon)",
+    "up": "docker-compose up -d",
+    "down": "docker-compose down"
   },
   "dependencies": {
     "drizzle-orm": "^0.30.10",
