@@ -1,0 +1,161 @@
+{
+  "id": "af9e48b3-368d-4c62-a4c9-ceead21025d7",
+  "prevId": "d944db66-057a-47e9-a9fb-83dd58dbcc83",
+  "version": "6",
+  "dialect": "postgresql",
+  "tables": {
+    "public.area_data_processed": {
+      "name": "area_data_processed",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "utility": {
+          "name": "utility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_jst": {
+          "name": "date_jst",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_jst": {
+          "name": "time_jst",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_utc": {
+          "name": "datetime_utc",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_demand_kwh": {
+          "name": "total_demand_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nuclear_kwh": {
+          "name": "nuclear_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "all_fossil_kwh": {
+          "name": "all_fossil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hydro_kwh": {
+          "name": "hydro_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geothermal_kwh": {
+          "name": "geothermal_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biomass_kwh": {
+          "name": "biomass_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_output_kwh": {
+          "name": "solar_output_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_throttling_kwh": {
+          "name": "solar_throttling_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wind_output_kwh": {
+          "name": "wind_output_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wind_throttling_kwh": {
+          "name": "wind_throttling_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pumped_storage_kwh": {
+          "name": "pumped_storage_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interconnectors_kwh": {
+          "name": "interconnectors_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_kwh": {
+          "name": "total_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -4,6 +4,11 @@
 
 - Install bun at https://bun.sh/
 - Set up a postgres database locally
+- Then run the following:
+
+```bash
+bun migrate
+```
 
 ## Development
 

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS "area_data_processed" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"utility" text NOT NULL,
+	"date_jst" date NOT NULL,
+	"time_jst" time NOT NULL,
+	"datetime_utc" timestamp NOT NULL,
+	"total_demand_kwh" numeric,
+	"nuclear_kwh" numeric,
+	"all_fossil_kwh" numeric,
+	"hydro_kwh" numeric,
+	"geothermal_kwh" numeric,
+	"biomass_kwh" numeric,
+	"solar_output_kwh" numeric,
+	"solar_throttling_kwh" numeric,
+	"wind_output_kwh" numeric,
+	"wind_throttling_kwh" numeric,
+	"pumped_storage_kwh" numeric,
+	"interconnectors_kwh" numeric,
+	"total_kwh" numeric
+);
