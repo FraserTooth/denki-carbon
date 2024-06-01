@@ -3,6 +3,8 @@ import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { OldAreaCSVDataProcessed } from "../types";
 import { DateTime } from "luxon";
+import { db } from "../db";
+import { areaDataFiles } from "../schema";
 
 const BASE_URL = "https://www.tepco.co.jp";
 const OLD_CSV_URL = `${BASE_URL}/forecast/html/area_jukyu_p-j.html`;

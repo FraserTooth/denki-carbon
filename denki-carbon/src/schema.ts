@@ -6,8 +6,16 @@ import {
   date,
   time,
   numeric,
+  pgEnum,
 } from "drizzle-orm/pg-core";
-import { url } from "inspector";
+import { JapanTsoName } from "./const";
+
+/**
+ * Converts an enum to a Postgres enum for Drizzle
+ */
+export const enumToPgEnum = (myEnum: any): [string, ...string[]] => {
+  return Object.values(myEnum) as [typeof myEnum, ...(typeof myEnum)[]];
+};
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -15,9 +23,11 @@ export const users = pgTable("users", {
   email: text("email"),
 });
 
+export const tsoEnum = pgEnum("tso", enumToPgEnum(JapanTsoName));
+
 export const areaDataFiles = pgTable("area_data_files", {
   id: serial("id").primaryKey(),
-  utility: text("utility").notNull(),
+  tso: tsoEnum("tso").notNull(),
   from_datetime: timestamp("from_datetime").notNull(),
   to_datetime: timestamp("to_datetime").notNull(),
   url: text("url").notNull(),
@@ -26,7 +36,7 @@ export const areaDataFiles = pgTable("area_data_files", {
 
 export const areaDataProcessed = pgTable("area_data_processed", {
   id: serial("id").primaryKey(),
-  utility: text("utility").notNull(),
+  tso: tsoEnum("tso").notNull(),
   dateJST: date("date_jst").notNull(),
   timeJST: time("time_jst").notNull(),
   datetimeUTC: timestamp("datetime_utc").notNull(),
