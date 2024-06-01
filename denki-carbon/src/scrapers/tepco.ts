@@ -4,7 +4,8 @@ import iconv from "iconv-lite";
 import { OldAreaCSVDataProcessed } from "../types";
 import { DateTime } from "luxon";
 import { db } from "../db";
-import { areaDataFiles } from "../schema";
+import { areaDataFiles, areaDataProcessed } from "../schema";
+import { JapanTsoName } from "../const";
 
 const BASE_URL = "https://www.tepco.co.jp";
 const OLD_CSV_URL = `${BASE_URL}/forecast/html/area_jukyu_p-j.html`;
@@ -48,7 +49,7 @@ const parseOldCSV = (csv: string[][]): OldAreaCSVDataProcessed[] => {
   const dataRows = csv.slice(3);
   const data: OldAreaCSVDataProcessed[] = dataRows.map((row) => {
     const [
-      date, //  "DATE"
+      date, // "DATE"
       time, // "TIME"
       totalDemand_daMWh, // "東京エリア需要"
       nuclear_daMWh, // "原子力"
@@ -65,9 +66,15 @@ const parseOldCSV = (csv: string[][]): OldAreaCSVDataProcessed[] => {
       total_daMWh, // "合計"
     ] = row;
     return {
-      datetimeUTC: DateTime.fromFormat(`${date} ${time}`, "yyyy/M/d H:mm", {
-        zone: "Asia/Tokyo",
-      }).toUTC(),
+      date,
+      time,
+      datetimeUTC: DateTime.fromFormat(
+        `${date.trim()} ${time.trim()}`,
+        "yyyy/M/d H:mm",
+        {
+          zone: "Asia/Tokyo",
+        }
+      ).toUTC(),
       totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
       nuclearkWh: parseDpToKwh(nuclear_daMWh),
       allfossilkWh: parseDpToKwh(allfossil_daMWh),
@@ -92,19 +99,99 @@ export const getAreaData = async () => {
 
   console.log("oldCsvUrls", oldCsvUrls);
 
-  // TODO: check which CSVs are new before downloading
+  // Check if we already have the data
+  const previousFiles = await db.select().from(areaDataFiles);
+  const previousUrls = previousFiles.map((f) => f.url);
+  const newUrlsForOldCSV = oldCsvUrls.filter(
+    (url) => !previousUrls.includes(url)
+  );
+  if (newUrlsForOldCSV.length === 0) {
+    console.log("No new files to scrape");
+    return;
+  }
+
   const dataByCSV = await Promise.all(
-    oldCsvUrls.map(async (url) => {
+    newUrlsForOldCSV.map(async (url) => {
       const csv = await downloadCSV(url);
       const data = parseOldCSV(csv);
       console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
       return {
         url,
+        from_datetime: data[0].datetimeUTC,
+        to_datetime: data[data.length - 1].datetimeUTC,
         data,
+        raw: csv.slice(3),
       };
     })
   );
 
-  const allData = dataByCSV.flatMap((d) => d.data);
-  console.log("allData.length", allData.length);
+  // Save the new data
+  const dataInsertByCsv = dataByCSV.map((csv) => {
+    const data = csv.data;
+    const insertValues: (typeof areaDataProcessed.$inferInsert)[] = data.map(
+      (row, rowIndex) => {
+        const dateStringJST = row.datetimeUTC.setZone("Asia/Tokyo").toISODate();
+        const timeStringJST = row.datetimeUTC
+          .setZone("Asia/Tokyo")
+          .toISOTime({ suppressMilliseconds: true });
+        if (!dateStringJST || !timeStringJST) {
+          console.error(
+            `Invalid row #${rowIndex} in ${csv.url}:`,
+            JSON.stringify(row)
+          );
+          console.error("rawRow:", JSON.stringify(csv.raw[rowIndex]));
+          throw new Error("Invalid date or time");
+        }
+        return {
+          tso: JapanTsoName.TEPCO,
+          dateJST: dateStringJST,
+          timeJST: timeStringJST,
+          datetimeUTC: row.datetimeUTC.toJSDate(),
+          totalDemandkWh: row.totalDemandkWh.toString(),
+          nuclearkWh: row.nuclearkWh.toString(),
+          allfossilkWh: row.allfossilkWh.toString(),
+          hydrokWh: row.hydrokWh.toString(),
+          geothermalkWh: row.geothermalkWh.toString(),
+          biomasskWh: row.biomasskWh.toString(),
+          solarOutputkWh: row.solarOutputkWh.toString(),
+          solarThrottlingkWh: row.solarThrottlingkWh.toString(),
+          windOutputkWh: row.windOutputkWh.toString(),
+          windThrottlingkWh: row.windThrottlingkWh.toString(),
+          pumpedStoragekWh: row.pumpedStoragekWh.toString(),
+          interconnectorskWh: row.interconnectorskWh.toString(),
+          totalkWh: row.totalkWh.toString(),
+        };
+      }
+    );
+    return {
+      ...csv,
+      dataInsert: insertValues,
+    };
+  });
+
+  // Insert the data 900 rows at a time
+  await Promise.all(
+    dataInsertByCsv.map(async (csv) => {
+      const data = csv.dataInsert;
+      console.log("Inserting", data.length, "rows for", csv.url);
+      for (let i = 0; i < data.length; i += 900) {
+        console.log("Inserting rows", i, "to", i + 900);
+        const insertBatch = data.slice(i, i + 900);
+        await db.insert(areaDataProcessed).values(insertBatch);
+      }
+    })
+  );
+
+  // Save the new file URLs
+  const scrapedFilesInsert: (typeof areaDataFiles.$inferInsert)[] =
+    dataByCSV.map((csv) => {
+      return {
+        tso: JapanTsoName.TEPCO,
+        from_datetime: csv.from_datetime.toJSDate(),
+        to_datetime: csv.to_datetime.toJSDate(),
+        url: csv.url,
+        last_updated: DateTime.utc().toJSDate(),
+      };
+    });
+  await db.insert(areaDataFiles).values(scrapedFilesInsert);
 };
