@@ -7,11 +7,21 @@ import {
   time,
   numeric,
 } from "drizzle-orm/pg-core";
+import { url } from "inspector";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   displayName: text("display_name"),
   email: text("email"),
+});
+
+export const areaDataFiles = pgTable("area_data_files", {
+  id: serial("id").primaryKey(),
+  utility: text("utility").notNull(),
+  from_datetime: timestamp("from_datetime").notNull(),
+  to_datetime: timestamp("to_datetime").notNull(),
+  url: text("url").notNull(),
+  last_updated: timestamp("last_updated").notNull(),
 });
 
 export const areaDataProcessed = pgTable("area_data_processed", {
