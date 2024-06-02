@@ -69,6 +69,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   for (let i = 0; i < insertValues.length; i += 900) {
     console.log("Inserting rows", i, "to", i + 900);
     const insertBatch = insertValues.slice(i, i + 900);
+    // TODO: make this an upsert
     await db.insert(areaDataProcessed).values(insertBatch);
   }
 
