@@ -17,12 +17,6 @@ export const enumToPgEnum = (myEnum: any): [string, ...string[]] => {
   return Object.values(myEnum) as [typeof myEnum, ...(typeof myEnum)[]];
 };
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  displayName: text("display_name"),
-  email: text("email"),
-});
-
 export const tsoEnum = pgEnum("tso", enumToPgEnum(JapanTsoName));
 
 export const areaDataFiles = pgTable("area_data_files", {

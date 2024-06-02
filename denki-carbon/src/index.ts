@@ -1,30 +1,30 @@
 import { Elysia, Static, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { db } from "./db";
-import { users } from "./schema";
+import { JapanTsoName } from "./const";
+import { areaDataProcessed } from "./schema";
+import { between, eq, and } from "drizzle-orm";
 
-type NewUser = typeof users.$inferInsert;
-type User = typeof users.$inferSelect;
-
-const dbGet = async (): Promise<User[]> => {
-  const result = await db.select().from(users);
-  return result;
-};
-
-const postApiBodyValidator = t.Object({
-  id: t.Number(),
-  displayName: t.String(),
-  email: t.String(),
+const areaDataGetQueryParamsValidator = t.Object({
+  tso: t.Enum(JapanTsoName),
+  from: t.Date(),
+  to: t.Date(),
 });
-type PostValidated = Static<typeof postApiBodyValidator>;
-
-const dbAdd = async (body: PostValidated): Promise<User[]> => {
-  const newUser: NewUser = {
-    displayName: body.displayName,
-    email: body.email,
-  };
-  const result = await db.insert(users).values(newUser).returning();
-  return result;
+type AreaDataGetParamsValidated = Static<
+  typeof areaDataGetQueryParamsValidator
+>;
+const areaDataGetHandler = async (query: AreaDataGetParamsValidated) => {
+  const dbResult = await db
+    .select()
+    .from(areaDataProcessed)
+    .where(
+      and(
+        eq(areaDataProcessed.tso, query.tso),
+        between(areaDataProcessed.datetimeUTC, query.from, query.to)
+      )
+    )
+    .execute();
+  return dbResult;
 };
 
 const app = new Elysia()
@@ -33,8 +33,9 @@ const app = new Elysia()
       path: "/docs",
     })
   )
-  .get("/test", dbGet)
-  .post("/test", ({ body }) => dbAdd(body), { body: postApiBodyValidator })
+  .get("/v1/area_data", ({ query }) => areaDataGetHandler(query), {
+    query: areaDataGetQueryParamsValidator,
+  })
   .listen(3000);
 
 console.log(

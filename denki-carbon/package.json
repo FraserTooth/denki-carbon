@@ -6,7 +6,7 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "build": "bun build ./src/index.ts --outdir ./build --target bun",
-    "generate": "bun drizzle-kit generate",
+    "generate": "bun --env-file=.env.local drizzle-kit generate",
     "drop": "bun drizzle-kit drop",
     "migrate": "bun run ./src/migrate.ts",
     "docker:build": "docker build --pull -t denki-carbon .",
@@ -15,7 +15,8 @@
     "docker:logs": "docker logs --follow $(docker ps -a -q --filter ancestor=denki-carbon)",
     "up": "docker-compose up -d --force-recreate --build",
     "up:debug": "docker-compose up",
-    "down": "docker-compose down"
+    "down": "docker-compose down",
+    "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",
