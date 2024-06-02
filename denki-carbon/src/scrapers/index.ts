@@ -5,6 +5,23 @@ import { db } from "../db";
 import { areaDataFiles, areaDataProcessed } from "../schema";
 import { DateTime } from "luxon";
 import { getTepcoAreaData } from "./tepco";
+import { JSDOM } from "jsdom";
+
+export const getCSVUrlsFromPage = async (pageUrl: string) => {
+  const csvUrls: string[] = [];
+  const response = await fetch(pageUrl);
+  const text = await response.text();
+  const doc = new JSDOM(text).window.document;
+  const baseUrl = "https://" + pageUrl.split("https://")[1].split("/")[0];
+  const links = doc.querySelectorAll("a");
+  links.forEach((link: any) => {
+    const href = link.getAttribute("href");
+    if (href && href.endsWith(".csv")) {
+      csvUrls.push(baseUrl + href);
+    }
+  });
+  return csvUrls.sort();
+};
 
 export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   const insertValues: (typeof areaDataProcessed.$inferInsert)[] = file.data.map(

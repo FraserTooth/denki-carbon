@@ -1,4 +1,3 @@
-import { JSDOM } from "jsdom";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { AreaDataFileProcessed, OldAreaCSVDataProcessed } from "../types";
@@ -7,24 +6,10 @@ import { db } from "../db";
 import { areaDataFiles } from "../schema";
 import { JapanTsoName } from "../const";
 import { eq } from "drizzle-orm";
+import { getCSVUrlsFromPage } from ".";
 
-const BASE_URL = "https://www.tepco.co.jp";
-const OLD_CSV_URL = `${BASE_URL}/forecast/html/area_jukyu_p-j.html`;
-
-const getOldCSVUrls = async () => {
-  const csvUrls: string[] = [];
-  const response = await fetch(OLD_CSV_URL);
-  const text = await response.text();
-  const doc = new JSDOM(text).window.document;
-  const links = doc.querySelectorAll("a");
-  links.forEach((link: any) => {
-    const href = link.getAttribute("href");
-    if (href && href.endsWith(".csv")) {
-      csvUrls.push(BASE_URL + href);
-    }
-  });
-  return csvUrls.sort();
-};
+const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
+const NEW_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu-j.html`;
 
 const downloadCSV = async (url: string) => {
   const response = await fetch(url);
@@ -96,9 +81,11 @@ const parseOldCSV = (csv: string[][]): OldAreaCSVDataProcessed[] => {
 
 export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
   console.log("TEPCO scraper running");
-  const oldCsvUrls = await getOldCSVUrls();
-
+  const oldCsvUrls = await getCSVUrlsFromPage(OLD_CSV_URL);
   console.log("oldCsvUrls", oldCsvUrls);
+
+  const newCsvUrls = await getCSVUrlsFromPage(NEW_CSV_URL);
+  console.log("newCsvUrls", newCsvUrls);
 
   // Check if we already have the data
   const previousFiles = await db
