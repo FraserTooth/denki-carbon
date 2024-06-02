@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { JapanTsoName } from "./const";
 
 export type OldAreaCSVDataProcessed = {
   datetimeUTC: DateTime;
@@ -15,4 +16,13 @@ export type OldAreaCSVDataProcessed = {
   pumpedStoragekWh: number;
   interconnectorskWh: number;
   totalkWh: number;
+};
+
+export type AreaDataFileProcessed = {
+  tso: JapanTsoName;
+  url: string;
+  from_datetime: DateTime;
+  to_datetime: DateTime;
+  raw: string[][]; // Raw CSV data
+  data: OldAreaCSVDataProcessed[];
 };
