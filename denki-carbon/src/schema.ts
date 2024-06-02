@@ -25,17 +25,21 @@ export const areaDataFiles = pgTable("area_data_files", {
   from_datetime: timestamp("from_datetime").notNull(),
   to_datetime: timestamp("to_datetime").notNull(),
   url: text("url").notNull(),
-  last_updated: timestamp("last_updated").notNull(),
+  last_updated: timestamp("last_updated").defaultNow(),
 });
 
 export const areaDataProcessed = pgTable("area_data_processed", {
   id: serial("id").primaryKey(),
   tso: tsoEnum("tso").notNull(),
-  dateJST: date("date_jst").notNull(),
+  dateJST: date("date_jst", { mode: "string" }).notNull(),
   timeFromJST: time("time_from_jst").notNull(),
   timeToJST: time("time_to_jst").notNull(),
-  datetimeFromUTC: timestamp("datetime_from_utc").notNull(),
-  datetimeToUTC: timestamp("datetime_to_utc").notNull(),
+  datetimeFrom: timestamp("datetime_from", {
+    withTimezone: true,
+  }).notNull(),
+  datetimeTo: timestamp("datetime_to", {
+    withTimezone: true,
+  }).notNull(),
   totalDemandkWh: numeric("total_demand_kwh"),
   nuclearkWh: numeric("nuclear_kwh"),
   allfossilkWh: numeric("all_fossil_kwh"),
@@ -49,4 +53,5 @@ export const areaDataProcessed = pgTable("area_data_processed", {
   pumpedStoragekWh: numeric("pumped_storage_kwh"),
   interconnectorskWh: numeric("interconnectors_kwh"),
   totalkWh: numeric("total_kwh"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
 });

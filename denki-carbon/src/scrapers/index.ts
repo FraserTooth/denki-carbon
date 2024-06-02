@@ -46,8 +46,8 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         dateJST: dateStringJST,
         timeFromJST: timeFromStringJST,
         timeToJST: timeToStringJST,
-        datetimeFromUTC: row.fromUTC.toJSDate(),
-        datetimeToUTC: row.toUTC.toJSDate(),
+        datetimeFrom: row.fromUTC.toJSDate(),
+        datetimeTo: row.toUTC.toJSDate(),
         totalDemandkWh: row.totalDemandkWh.toString(),
         nuclearkWh: row.nuclearkWh.toString(),
         allfossilkWh: row.allfossilkWh.toString(),
@@ -80,7 +80,6 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
     from_datetime: file.from_datetime.toJSDate(),
     to_datetime: file.to_datetime.toJSDate(),
     url: file.url,
-    last_updated: DateTime.utc().toJSDate(),
   };
   await db.insert(areaDataFiles).values(scrapedFilesInsert);
 };

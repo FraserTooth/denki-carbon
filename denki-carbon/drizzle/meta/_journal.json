@@ -50,6 +50,13 @@
       "when": 1717331833563,
       "tag": "0006_green_outlaw_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1717335505818,
+      "tag": "0007_hot_tinkerer",
+      "breakpoints": true
     }
   ]
 }

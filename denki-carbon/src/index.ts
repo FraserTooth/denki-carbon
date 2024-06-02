@@ -20,7 +20,7 @@ const areaDataGetHandler = async (query: AreaDataGetParamsValidated) => {
     .where(
       and(
         eq(areaDataProcessed.tso, query.tso),
-        between(areaDataProcessed.datetimeFromUTC, query.from, query.to)
+        between(areaDataProcessed.datetimeFrom, query.from, query.to)
       )
     )
     .execute();
