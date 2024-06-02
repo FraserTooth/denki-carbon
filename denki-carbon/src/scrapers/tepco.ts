@@ -185,6 +185,7 @@ export const getAreaData = async () => {
   // Save the new file URLs
   const scrapedFilesInsert: (typeof areaDataFiles.$inferInsert)[] =
     dataByCSV.map((csv) => {
+      console.log("Registering File:", csv.url);
       return {
         tso: JapanTsoName.TEPCO,
         from_datetime: csv.from_datetime.toJSDate(),

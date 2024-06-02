@@ -9,5 +9,5 @@ export const runScraper = async (utility: JapanTsoName) => {
 };
 
 // TODO: just for testing, remove this
-runScraper(JapanTsoName.TEPCO);
+await runScraper(JapanTsoName.TEPCO);
 exit(0);
