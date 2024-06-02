@@ -1,10 +1,6 @@
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
-import {
-  AreaCSVDataProcessed,
-  AreaDataFileProcessed,
-  OldAreaCSVDataProcessed,
-} from "../types";
+import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { db } from "../db";
 import { areaDataFiles } from "../schema";
@@ -45,10 +41,10 @@ const parseAverageMWFor30minToKwh = (raw: string): number => {
   return averageKw * (30 / 60);
 };
 
-const parseOldCSV = (csv: string[][]): OldAreaCSVDataProcessed[] => {
+const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   // Trim 3 header rows
   const dataRows = csv.slice(3);
-  const data: OldAreaCSVDataProcessed[] = dataRows.map((row) => {
+  const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
     const [
       date, // "DATE"
       time, // "TIME"
@@ -180,15 +176,26 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
   const newUrlsForOldCSV = oldCsvUrls.filter(
     (url) => !previousUrls.includes(url)
   );
-  if (newUrlsForOldCSV.length === 0) {
+  const newUrlsForNewCSV = newCsvUrls.filter(
+    (url) => !previousUrls.includes(url)
+  );
+  if (newUrlsForOldCSV.length === 0 && newUrlsForNewCSV.length === 0) {
     console.log("No new files to scrape");
     return [];
   }
+  const urlsToDownload = [
+    ...newUrlsForOldCSV.map((url) => ({ url, format: "old" })),
+    ...newUrlsForNewCSV.map((url) => ({ url, format: "new" })),
+  ];
 
   const dataByCSV = await Promise.all(
-    newUrlsForOldCSV.map(async (url) => {
-      const csv = await downloadCSV(url, "Shift_JIS");
-      const data = parseOldCSV(csv);
+    urlsToDownload.map(async (file) => {
+      const { url, format } = file;
+      const csv = await downloadCSV(
+        url,
+        format === "old" ? "Shift_JIS" : "utf-8"
+      );
+      const data = format === "old" ? parseOldCSV(csv) : parseNewCSV(csv);
       console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
       return {
         tso: JapanTsoName.TEPCO,
