@@ -26,11 +26,14 @@ export const getCSVUrlsFromPage = async (pageUrl: string) => {
 export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   const insertValues: (typeof areaDataProcessed.$inferInsert)[] = file.data.map(
     (row, rowIndex) => {
-      const dateStringJST = row.datetimeUTC.setZone("Asia/Tokyo").toISODate();
-      const timeStringJST = row.datetimeUTC
+      const dateStringJST = row.fromUTC.setZone("Asia/Tokyo").toISODate();
+      const timeFromStringJST = row.fromUTC
         .setZone("Asia/Tokyo")
         .toISOTime({ suppressMilliseconds: true });
-      if (!dateStringJST || !timeStringJST) {
+      const timeToStringJST = row.toUTC
+        .setZone("Asia/Tokyo")
+        .toISOTime({ suppressMilliseconds: true });
+      if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
         console.error(
           `Invalid row #${rowIndex} in ${file.url}:`,
           JSON.stringify(row)
@@ -41,8 +44,10 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       return {
         tso: file.tso,
         dateJST: dateStringJST,
-        timeJST: timeStringJST,
-        datetimeUTC: row.datetimeUTC.toJSDate(),
+        timeFromJST: timeFromStringJST,
+        timeToJST: timeToStringJST,
+        datetimeFromUTC: row.fromUTC.toJSDate(),
+        datetimeToUTC: row.toUTC.toJSDate(),
         totalDemandkWh: row.totalDemandkWh.toString(),
         nuclearkWh: row.nuclearkWh.toString(),
         allfossilkWh: row.allfossilkWh.toString(),

@@ -9,6 +9,8 @@ import { eq } from "drizzle-orm";
 import { getCSVUrlsFromPage } from ".";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
+const OLD_CSV_FORMAT_INTERVAL_MINUTES = 60;
+
 const NEW_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu-j.html`;
 
 const downloadCSV = async (url: string) => {
@@ -51,16 +53,18 @@ const parseOldCSV = (csv: string[][]): OldAreaCSVDataProcessed[] => {
       interconnectors_daMWh, // "連系線"
       total_daMWh, // "合計"
     ] = row;
+    const fromUTC = DateTime.fromFormat(
+      `${date.trim()} ${time.trim()}`,
+      "yyyy/M/d H:mm",
+      {
+        zone: "Asia/Tokyo",
+      }
+    ).toUTC();
     return {
       date,
       time,
-      datetimeUTC: DateTime.fromFormat(
-        `${date.trim()} ${time.trim()}`,
-        "yyyy/M/d H:mm",
-        {
-          zone: "Asia/Tokyo",
-        }
-      ).toUTC(),
+      fromUTC,
+      toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT_INTERVAL_MINUTES }),
       totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
       nuclearkWh: parseDpToKwh(nuclear_daMWh),
       allfossilkWh: parseDpToKwh(allfossil_daMWh),
@@ -109,8 +113,8 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
       return {
         tso: JapanTsoName.TEPCO,
         url,
-        from_datetime: data[0].datetimeUTC,
-        to_datetime: data[data.length - 1].datetimeUTC,
+        from_datetime: data[0].fromUTC,
+        to_datetime: data[data.length - 1].toUTC,
         data,
         raw: csv.slice(3),
       };

@@ -2,7 +2,8 @@ import { DateTime } from "luxon";
 import { JapanTsoName } from "./const";
 
 export type OldAreaCSVDataProcessed = {
-  datetimeUTC: DateTime;
+  fromUTC: DateTime;
+  toUTC: DateTime;
   totalDemandkWh: number;
   nuclearkWh: number;
   allfossilkWh: number;
