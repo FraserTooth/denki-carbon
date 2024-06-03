@@ -46,13 +46,13 @@ const getRealTimeCSVUrls = (): string[] => {
 };
 
 const parseDpToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/\D/g), "");
+  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
 };
 
 const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/\D/g), "");
+  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MW, so multiply by 1000 to get kW
   const averageKw = parseFloat(cleaned) * 1000;
   // Multiply by hours to get kWh

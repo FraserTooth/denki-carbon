@@ -23,6 +23,11 @@ const japanLifecycleCarbonIntensitiesBySource: Record<
   [GenerationSource.OTHER]: 500, // VVPs often use a mix of sources, so use an average Grid Intensity for now
 };
 
+/**
+ * For each TSO, the comparative volume of each fuel type used in their thermal generation
+ * The units used are not consistent, but thats okay as we are only interested in the relative proportions
+ * This is used to calculate the carbon intensity of the TSO's generation for periods where the fuel mix is not provided
+ */
 const fuelTypeTotalsByTso: Record<
   JapanTsoName,
   Record<
@@ -93,7 +98,7 @@ const fuelTypeTotalsByTso: Record<
   },
 };
 
-export const getCarbonIntensityForSource = (source: GenerationSource) => {
+export const gCO2BySource = (source: GenerationSource) => {
   const intensity = japanLifecycleCarbonIntensitiesBySource[source];
   if (intensity === undefined) {
     throw new Error(`Unsupported source: ${source}`);
@@ -130,74 +135,70 @@ export const getTotalCarbonIntensityForAreaDataRow = (
     oilkWh !== null &&
     otherFossilkWh !== null;
 
-  if (hasFossilTypesSeparated) {
-    const totalintensity =
-      (parseFloat(lngkWh) * getCarbonIntensityForSource(GenerationSource.LNG) +
-        parseFloat(coalkWh) *
-          getCarbonIntensityForSource(GenerationSource.COAL) +
-        parseFloat(oilkWh) * getCarbonIntensityForSource(GenerationSource.OIL) +
-        parseFloat(otherFossilkWh) *
-          getCarbonIntensityForSource(GenerationSource.OTHER_FOSSIL) +
-        parseFloat(nuclearkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.NUCLEAR) +
-        parseFloat(hydrokWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.HYDRO) +
-        parseFloat(geothermalkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.GEOTHERMAL) +
-        parseFloat(biomasskWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.BIOMASS) +
-        parseFloat(solarOutputkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.SOLAR) +
-        parseFloat(windOutputkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.WIND) +
-        parseFloat(pumpedStoragekWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.PUMPED_HYDRO) +
-        parseFloat(interconnectorskWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.INTERCONNECTORS) +
-        parseFloat(batteryStoragekWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.BATTERY) +
-        parseFloat(otherkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.OTHER)) /
-      parseFloat(row.totalkWh ?? "0");
-    return totalintensity;
-  } else {
-    const stations = fuelTypeTotalsByTso[tso as JapanTsoName];
-    const totalFossilPercentage = Object.values(stations).reduce(
-      (acc, val) => acc + val,
-      0
-    );
-    const fossilIntensity =
-      (stations[GenerationSource.COAL] *
-        getCarbonIntensityForSource(GenerationSource.COAL) +
-        stations[GenerationSource.OIL] *
-          getCarbonIntensityForSource(GenerationSource.OIL) +
-        stations[GenerationSource.LNG] *
-          getCarbonIntensityForSource(GenerationSource.LNG)) /
-      totalFossilPercentage;
+  const onlyCountIfPositive = (value: number | null) => {
+    return value && value > 0 ? value : 0;
+  };
 
-    const totalintensity =
-      (parseFloat(allfossilkWh ?? "0") * fossilIntensity +
-        parseFloat(nuclearkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.NUCLEAR) +
-        parseFloat(hydrokWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.HYDRO) +
+  const intensityContributors = (() => {
+    if (hasFossilTypesSeparated) {
+      return [
+        parseFloat(lngkWh) * gCO2BySource(GenerationSource.LNG),
+        parseFloat(coalkWh) * gCO2BySource(GenerationSource.COAL),
+        parseFloat(oilkWh) * gCO2BySource(GenerationSource.OIL),
+        parseFloat(otherFossilkWh) *
+          gCO2BySource(GenerationSource.OTHER_FOSSIL),
+        parseFloat(nuclearkWh ?? "0") * gCO2BySource(GenerationSource.NUCLEAR),
+        parseFloat(hydrokWh ?? "0") * gCO2BySource(GenerationSource.HYDRO),
         parseFloat(geothermalkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.GEOTHERMAL) +
-        parseFloat(biomasskWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.BIOMASS) +
+          gCO2BySource(GenerationSource.GEOTHERMAL),
+        parseFloat(biomasskWh ?? "0") * gCO2BySource(GenerationSource.BIOMASS),
         parseFloat(solarOutputkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.SOLAR) +
-        parseFloat(windOutputkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.WIND) +
+          gCO2BySource(GenerationSource.SOLAR),
+        parseFloat(windOutputkWh ?? "0") * gCO2BySource(GenerationSource.WIND),
         parseFloat(pumpedStoragekWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.PUMPED_HYDRO) +
+          gCO2BySource(GenerationSource.PUMPED_HYDRO),
         parseFloat(interconnectorskWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.INTERCONNECTORS) +
+          gCO2BySource(GenerationSource.INTERCONNECTORS),
         parseFloat(batteryStoragekWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.BATTERY) +
-        parseFloat(otherkWh ?? "0") *
-          getCarbonIntensityForSource(GenerationSource.OTHER)) /
-      parseFloat(row.totalkWh ?? "0");
-    return totalintensity;
-  }
+          gCO2BySource(GenerationSource.BATTERY),
+        parseFloat(otherkWh ?? "0") * gCO2BySource(GenerationSource.OTHER),
+      ];
+    } else {
+      const stations = fuelTypeTotalsByTso[tso as JapanTsoName];
+      const totalFossilPercentage = Object.values(stations).reduce(
+        (acc, val) => acc + val,
+        0
+      );
+      const fossilIntensity =
+        (stations[GenerationSource.COAL] * gCO2BySource(GenerationSource.COAL) +
+          stations[GenerationSource.OIL] * gCO2BySource(GenerationSource.OIL) +
+          stations[GenerationSource.LNG] * gCO2BySource(GenerationSource.LNG)) /
+        totalFossilPercentage;
+
+      return [
+        parseFloat(allfossilkWh ?? "0") * fossilIntensity,
+        parseFloat(nuclearkWh ?? "0") * gCO2BySource(GenerationSource.NUCLEAR),
+        parseFloat(hydrokWh ?? "0") * gCO2BySource(GenerationSource.HYDRO),
+        parseFloat(geothermalkWh ?? "0") *
+          gCO2BySource(GenerationSource.GEOTHERMAL),
+        parseFloat(biomasskWh ?? "0") * gCO2BySource(GenerationSource.BIOMASS),
+        parseFloat(solarOutputkWh ?? "0") *
+          gCO2BySource(GenerationSource.SOLAR),
+        parseFloat(windOutputkWh ?? "0") * gCO2BySource(GenerationSource.WIND),
+        parseFloat(pumpedStoragekWh ?? "0") *
+          gCO2BySource(GenerationSource.PUMPED_HYDRO),
+        parseFloat(interconnectorskWh ?? "0") *
+          gCO2BySource(GenerationSource.INTERCONNECTORS),
+        parseFloat(batteryStoragekWh ?? "0") *
+          gCO2BySource(GenerationSource.BATTERY),
+        parseFloat(otherkWh ?? "0") * gCO2BySource(GenerationSource.OTHER),
+      ];
+    }
+  })();
+  const totalintensity =
+    intensityContributors.reduce(
+      (total, source) => total + onlyCountIfPositive(source),
+      0
+    ) / parseFloat(row.totalkWh ?? "0");
+  return totalintensity;
 };

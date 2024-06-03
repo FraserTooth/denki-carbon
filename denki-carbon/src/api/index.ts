@@ -24,7 +24,7 @@ const areaDataGetHandler = async (query: AreaDataGetParamsValidated) => {
         between(areaDataProcessed.datetimeFrom, query.from, query.to)
       )
     )
-    .execute();
+    .orderBy(areaDataProcessed.datetimeFrom);
 
   const resultsWithIntensity = areaDataResult.map((row) => {
     const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
