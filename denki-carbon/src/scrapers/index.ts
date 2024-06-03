@@ -1,4 +1,3 @@
-import { exit } from "process";
 import { JapanTsoName } from "../const";
 import { AreaDataFileProcessed } from "../types";
 import { db } from "../db";
@@ -6,6 +5,8 @@ import { areaDataFiles, areaDataProcessed } from "../schema";
 import { getTepcoAreaData } from "./tepco";
 import { JSDOM } from "jsdom";
 import { getTohokuAreaData } from "./tohoku";
+import { parse } from "csv-parse/sync";
+import iconv from "iconv-lite";
 
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
@@ -24,6 +25,19 @@ export const getCSVUrlsFromPage = async (
     }
   });
   return csvUrls.sort();
+};
+
+export const downloadCSV = async (url: string, encoding: string) => {
+  const response = await fetch(url);
+  const dataResponse = await response.arrayBuffer();
+  const buffer = Buffer.from(dataResponse);
+  const decoded = iconv.decode(buffer, encoding);
+
+  const records: string[][] = parse(decoded, {
+    relax_column_count: true,
+    skip_empty_lines: true,
+  });
+  return records;
 };
 
 export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
