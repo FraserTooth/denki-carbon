@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS "area_data_processed" (
 	"total_demand_kwh" numeric,
 	"nuclear_kwh" numeric,
 	"all_fossil_kwh" numeric,
+	"lng_kwh" numeric,
+	"coal_kwh" numeric,
+	"oil_kwh" numeric,
+	"other_fossil_kwh" numeric,
 	"hydro_kwh" numeric,
 	"geothermal_kwh" numeric,
 	"biomass_kwh" numeric,
@@ -33,7 +37,9 @@ CREATE TABLE IF NOT EXISTS "area_data_processed" (
 	"wind_output_kwh" numeric,
 	"wind_throttling_kwh" numeric,
 	"pumped_storage_kwh" numeric,
+	"battery_storage_kwh" numeric,
 	"interconnectors_kwh" numeric,
+	"other_kwh" numeric,
 	"total_kwh" numeric,
 	"last_updated" timestamp DEFAULT now()
 );

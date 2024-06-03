@@ -17,7 +17,8 @@
     "up": "docker-compose up -d --force-recreate --build",
     "up:debug": "docker-compose up",
     "down": "docker-compose down",
-    "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
+    "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose",
+    "scrape": "bun run ./src/scrapers/scripts.ts"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",

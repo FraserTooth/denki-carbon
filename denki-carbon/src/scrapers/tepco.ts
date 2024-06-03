@@ -7,8 +7,8 @@ import { getCSVUrlsFromPage } from ".";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
 const OLD_CSV_FORMAT_INTERVAL_MINUTES = 60;
-const NEW_CSV_FORMAT_INTERVAL_MINUTES = 30;
 
+const NEW_CSV_FORMAT_INTERVAL_MINUTES = 30;
 const NEW_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu-j.html`;
 
 const downloadCSV = async (url: string, encoding: string) => {
@@ -64,11 +64,9 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
-      },
+      }
     ).toUTC();
     return {
-      date,
-      time,
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT_INTERVAL_MINUTES }),
       totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
@@ -120,15 +118,13 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
-      },
+      }
     ).toUTC();
     const lngkWh = parseAverageMWFor30minToKwh(lngAverageMW);
     const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
     const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
     const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
     return {
-      date,
-      time,
       fromUTC,
       toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT_INTERVAL_MINUTES }),
       totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
@@ -157,10 +153,18 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
 
 export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
   console.log("TEPCO scraper running");
-  const oldCsvUrls = await getCSVUrlsFromPage(OLD_CSV_URL);
+  const oldCsvUrls = await getCSVUrlsFromPage(
+    OLD_CSV_URL,
+    RegExp(/.csv$/),
+    "https://www.tepco.co.jp"
+  );
   console.log("oldCsvUrls", oldCsvUrls);
 
-  const newCsvUrls = await getCSVUrlsFromPage(NEW_CSV_URL);
+  const newCsvUrls = await getCSVUrlsFromPage(
+    NEW_CSV_URL,
+    RegExp(/.csv$/),
+    "https://www.tepco.co.jp"
+  );
   console.log("newCsvUrls", newCsvUrls);
 
   const urlsToDownload = [
@@ -173,7 +177,7 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
       const { url, format } = file;
       const csv = await downloadCSV(
         url,
-        format === "old" ? "Shift_JIS" : "utf-8",
+        format === "old" ? "Shift_JIS" : "utf-8"
       );
       const data = format === "old" ? parseOldCSV(csv) : parseNewCSV(csv);
       console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
@@ -185,7 +189,7 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
         data,
         raw: csv.slice(3),
       };
-    }),
+    })
   );
 
   return dataByCSV;

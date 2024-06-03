@@ -1,5 +1,5 @@
 {
-  "id": "ffa3c2c9-8d50-4ae6-a5c0-abb18f2b4512",
+  "id": "7ac74aa7-76dd-4e74-8c7a-648fd400d9dd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "6",
   "dialect": "postgresql",
@@ -123,6 +123,30 @@
           "primaryKey": false,
           "notNull": false
         },
+        "lng_kwh": {
+          "name": "lng_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "coal_kwh": {
+          "name": "coal_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oil_kwh": {
+          "name": "oil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_fossil_kwh": {
+          "name": "other_fossil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
         "hydro_kwh": {
           "name": "hydro_kwh",
           "type": "numeric",
@@ -171,8 +195,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "battery_storage_kwh": {
+          "name": "battery_storage_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
         "interconnectors_kwh": {
           "name": "interconnectors_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_kwh": {
+          "name": "other_kwh",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false

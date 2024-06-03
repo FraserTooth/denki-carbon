@@ -6,16 +6,19 @@ import { areaDataFiles, areaDataProcessed } from "../schema";
 import { getTepcoAreaData } from "./tepco";
 import { JSDOM } from "jsdom";
 
-export const getCSVUrlsFromPage = async (pageUrl: string) => {
+export const getCSVUrlsFromPage = async (
+  pageUrl: string,
+  urlRegex: RegExp,
+  baseUrl: string
+) => {
   const csvUrls: string[] = [];
   const response = await fetch(pageUrl);
   const text = await response.text();
   const doc = new JSDOM(text).window.document;
-  const baseUrl = "https://" + pageUrl.split("https://")[1].split("/")[0];
   const links = doc.querySelectorAll("a");
   links.forEach((link: any) => {
     const href = link.getAttribute("href");
-    if (href && href.endsWith(".csv")) {
+    if (href && urlRegex.test(href)) {
       csvUrls.push(baseUrl + href);
     }
   });
@@ -33,14 +36,14 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
         console.error(
           `Invalid row #${rowIndex} in ${file.url}:`,
-          JSON.stringify(row),
+          JSON.stringify(row)
         );
         console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid date or time");
       }
       return {
         dataId: [JapanTsoName.TEPCO, dateStringJST, timeFromStringJST].join(
-          "_",
+          "_"
         ),
         tso: file.tso,
         dateJST: dateStringJST,
@@ -60,13 +63,20 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         windThrottlingkWh: row.windThrottlingkWh.toString(),
         pumpedStoragekWh: row.pumpedStoragekWh.toString(),
         interconnectorskWh: row.interconnectorskWh.toString(),
-        totalkWh: row.totalkWh.toString(),
+        // Possibly undefined fields
+        lngkWh: row.lngkWh?.toString(),
+        coalkWh: row.coalkWh?.toString(),
+        oilkWh: row.oilkWh?.toString(),
+        otherFossilkWh: row.otherFossilkWh?.toString(),
+        batteryStoragekWh: row.batteryStoragekWh?.toString(),
+        otherkWh: row.otherkWh?.toString(),
+        totalkWh: row.totalkWh?.toString(),
       };
-    },
+    }
   );
 
   console.log(
-    `Attempting insert of ${insertValues.length} rows for ${file.url}`,
+    `Attempting insert of ${insertValues.length} rows for ${file.url}`
   );
   let insertedRowsCount = 0;
   for (let i = 0; i < insertValues.length; i += 900) {
@@ -112,7 +122,3 @@ export const runScraper = async (utility: JapanTsoName) => {
     }
   }
 };
-
-// TODO: just for testing, remove this
-await runScraper(JapanTsoName.TEPCO);
-exit(0);
