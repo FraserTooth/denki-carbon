@@ -82,13 +82,26 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
 
   // Save the new file URLs
   console.log("Recording file", file.url);
+  const fileDateStringJST = file.fromDatetime.setZone("Asia/Tokyo").toISODate();
   const scrapedFilesInsert: typeof areaDataFiles.$inferInsert = {
+    fileKey: `${file.tso}_${fileDateStringJST}`,
     tso: JapanTsoName.TEPCO,
-    from_datetime: file.from_datetime.toJSDate(),
-    to_datetime: file.to_datetime.toJSDate(),
+    fromDatetime: file.fromDatetime.toJSDate(),
+    toDatetime: file.toDatetime.toJSDate(),
+    dataRows: file.data.length,
     url: file.url,
   };
-  await db.insert(areaDataFiles).values(scrapedFilesInsert);
+  await db
+    .insert(areaDataFiles)
+    .values(scrapedFilesInsert)
+    .onConflictDoUpdate({
+      target: areaDataFiles.fileKey,
+      set: {
+        toDatetime: scrapedFilesInsert.toDatetime,
+        dataRows: scrapedFilesInsert.dataRows,
+        lastUpdated: new Date(),
+      },
+    });
 };
 
 export const runScraper = async (utility: JapanTsoName) => {

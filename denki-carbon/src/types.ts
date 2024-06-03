@@ -28,8 +28,8 @@ export type AreaCSVDataProcessed = {
 export type AreaDataFileProcessed = {
   tso: JapanTsoName;
   url: string;
-  from_datetime: DateTime;
-  to_datetime: DateTime;
+  fromDatetime: DateTime;
+  toDatetime: DateTime;
   raw: string[][]; // Raw CSV data
   data: AreaCSVDataProcessed[];
 };

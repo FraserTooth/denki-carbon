@@ -1,7 +1,7 @@
 export enum JapanTsoName {
   HEPCO = "hepco",
   TOHOKU = "tohoku",
-  TEPCO = "tokyo",
+  TEPCO = "tepco",
   CHUBU = "chubu",
   HOKUDEN = "hokuden",
   KEPCO = "kepco",

@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1717074666471,
-      "tag": "0000_sleepy_tyger_tiger",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1717075019323,
-      "tag": "0001_vengeful_pestilence",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1717222402088,
-      "tag": "0002_good_skin",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1717247266852,
-      "tag": "0003_blushing_forgotten_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1717248853570,
-      "tag": "0004_married_captain_flint",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1717309664641,
-      "tag": "0005_needy_marvel_zombies",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1717331833563,
-      "tag": "0006_green_outlaw_kid",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1717335505818,
-      "tag": "0007_hot_tinkerer",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1717336206671,
-      "tag": "0008_serious_rafael_vega",
+      "when": 1717397037478,
+      "tag": "0000_old_firebird",
       "breakpoints": true
     }
   ]

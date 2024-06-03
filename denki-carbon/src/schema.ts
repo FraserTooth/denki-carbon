@@ -1,12 +1,12 @@
 import {
   pgTable,
-  serial,
   text,
   timestamp,
   date,
   time,
   numeric,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { JapanTsoName } from "./const";
 
@@ -20,12 +20,17 @@ export const enumToPgEnum = (myEnum: any): [string, ...string[]] => {
 export const tsoEnum = pgEnum("tso", enumToPgEnum(JapanTsoName));
 
 export const areaDataFiles = pgTable("area_data_files", {
-  id: serial("id").primaryKey(),
+  fileKey: text("fileKey").primaryKey(),
   tso: tsoEnum("tso").notNull(),
-  from_datetime: timestamp("from_datetime").notNull(),
-  to_datetime: timestamp("to_datetime").notNull(),
+  fromDatetime: timestamp("from_datetime", {
+    withTimezone: true,
+  }).notNull(),
+  toDatetime: timestamp("to_datetime", {
+    withTimezone: true,
+  }).notNull(),
   url: text("url").notNull(),
-  last_updated: timestamp("last_updated").defaultNow(),
+  dataRows: integer("data_rows").notNull(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
 export const areaDataProcessed = pgTable("area_data_processed", {

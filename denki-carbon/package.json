@@ -8,6 +8,7 @@
     "build": "bun build ./src/index.ts --outdir ./build --target bun",
     "generate": "bun --env-file=.env.local drizzle-kit generate",
     "drop": "bun --env-file=.env.local drizzle-kit drop",
+    "push": "bun --env-file=.env.local drizzle-kit push",
     "migrate": "bun run ./src/migrate.ts",
     "docker:build": "docker build --pull -t denki-carbon .",
     "docker:run": "docker run -d -p 3000:3000 denki-carbon",

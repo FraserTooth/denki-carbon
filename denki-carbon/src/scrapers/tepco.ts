@@ -183,8 +183,8 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
       return {
         tso: JapanTsoName.TEPCO,
         url,
-        from_datetime: data[0].fromUTC,
-        to_datetime: data[data.length - 1].toUTC,
+        fromDatetime: data[0].fromUTC,
+        toDatetime: data[data.length - 1].toUTC,
         data,
         raw: csv.slice(3),
       };
