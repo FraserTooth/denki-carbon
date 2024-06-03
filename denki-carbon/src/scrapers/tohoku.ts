@@ -48,7 +48,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       interconnectorsMWh, // "連系線〔MWh〕"
     ] = row;
     const fromUTC = DateTime.fromFormat(
-      dateTime,
+      dateTime.replaceAll("  ", " "),
       // e.g. 2023/4/1 0:00
       "yyyy/M/d H:mm",
       {
@@ -95,14 +95,13 @@ export const getTohokuAreaData = async (): Promise<AreaDataFileProcessed[]> => {
       );
       const data = format === "old" ? parseOldCSV(csv) : [];
       console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
-      console.log("dataSnippet", data.splice(0, 3));
       return {
         tso: JapanTsoName.TOHOKU,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,
         data,
-        raw: csv.slice(3),
+        raw: csv.slice(1),
       };
     })
   );

@@ -5,6 +5,7 @@ import { db } from "../db";
 import { areaDataFiles, areaDataProcessed } from "../schema";
 import { getTepcoAreaData } from "./tepco";
 import { JSDOM } from "jsdom";
+import { getTohokuAreaData } from "./tohoku";
 
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
@@ -42,9 +43,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         throw new Error("Invalid date or time");
       }
       return {
-        dataId: [JapanTsoName.TEPCO, dateStringJST, timeFromStringJST].join(
-          "_"
-        ),
+        dataId: [file.tso, dateStringJST, timeFromStringJST].join("_"),
         tso: file.tso,
         dateJST: dateStringJST,
         timeFromJST: timeFromStringJST,
@@ -95,7 +94,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   const fileDateStringJST = file.fromDatetime.setZone("Asia/Tokyo").toISODate();
   const scrapedFilesInsert: typeof areaDataFiles.$inferInsert = {
     fileKey: `${file.tso}_${fileDateStringJST}`,
-    tso: JapanTsoName.TEPCO,
+    tso: file.tso,
     fromDatetime: file.fromDatetime.toJSDate(),
     toDatetime: file.toDatetime.toJSDate(),
     dataRows: file.data.length,
@@ -115,7 +114,12 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
 };
 
 export const runScraper = async (utility: JapanTsoName) => {
-  if (utility === JapanTsoName.TEPCO) {
+  if (utility === JapanTsoName.TOHOKU) {
+    const files = await getTohokuAreaData();
+    for (const file of files) {
+      await saveAreaDataFile(file);
+    }
+  } else if (utility === JapanTsoName.TEPCO) {
     const files = await getTepcoAreaData();
     for (const file of files) {
       await saveAreaDataFile(file);
