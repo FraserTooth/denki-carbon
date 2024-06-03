@@ -63,7 +63,6 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   // Trim 1 header row
   const dataRows = csv.slice(OLD_CSV_FORMAT.headerRows);
   const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
-    // DATE_TIME,エリア需要〔MWh〕,水力〔MWh〕,火力〔MWh〕,原子力〔MWh〕,太陽光実績〔MWh〕,太陽光抑制量〔MWh〕,風力実績〔MWh〕,風力抑制量〔MWh〕,地熱〔MWh〕,バイオマス〔MWh〕,揚水〔MWh〕,連系線〔MWh〕
     const [
       dateTime, // "DATE_TIME"
       totalDemandMWh, // "エリア需要〔MWh〕"
