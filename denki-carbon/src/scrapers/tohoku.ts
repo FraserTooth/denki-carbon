@@ -46,7 +46,7 @@ const getRealTimeCSVUrls = (): string[] => {
 };
 
 const parseDpToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(",", "");
+  const cleaned = raw.trim().replace(RegExp(/\D/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
 };

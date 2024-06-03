@@ -6,6 +6,7 @@ import { getTepcoAreaData } from "./tepco";
 
 // await getTohokuAreaData();
 // await getTepcoAreaData();
+await runScraper(JapanTsoName.TEPCO);
 await runScraper(JapanTsoName.TOHOKU);
 
 exit(0);

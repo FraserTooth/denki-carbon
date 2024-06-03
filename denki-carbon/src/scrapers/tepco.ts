@@ -6,10 +6,22 @@ import { JapanTsoName } from "../const";
 import { getCSVUrlsFromPage } from ".";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
-const OLD_CSV_FORMAT_INTERVAL_MINUTES = 60;
 
-const NEW_CSV_FORMAT_INTERVAL_MINUTES = 30;
 const NEW_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu-j.html`;
+
+const OLD_CSV_FORMAT = {
+  blocksInDay: 24,
+  encoding: "Shift_JIS",
+  headerRows: 1,
+  intervalMinutes: 60,
+};
+
+const NEW_CSV_FORMAT = {
+  blocksInDay: 48,
+  encoding: "utf-8",
+  headerRows: 2,
+  intervalMinutes: 30,
+};
 
 const downloadCSV = async (url: string, encoding: string) => {
   const response = await fetch(url);
@@ -25,13 +37,13 @@ const downloadCSV = async (url: string, encoding: string) => {
 };
 
 const parseDpToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(",", "");
+  const cleaned = raw.trim().replace(RegExp(/\D/g), "");
   // Values are in 万kWh, so multiply by 10000 to get kWh
   return parseFloat(cleaned) * 10000;
 };
 
 const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(",", "");
+  const cleaned = raw.trim().replace(RegExp(/\D/g), "");
   // Values are in MW, so multiply by 1000 to get kW
   const averageKw = parseFloat(cleaned) * 1000;
   // Multiply by hours to get kWh
@@ -68,7 +80,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     ).toUTC();
     return {
       fromUTC,
-      toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT_INTERVAL_MINUTES }),
+      toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
       nuclearkWh: parseDpToKwh(nuclear_daMWh),
       allfossilkWh: parseDpToKwh(allfossil_daMWh),
@@ -126,7 +138,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
     return {
       fromUTC,
-      toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT_INTERVAL_MINUTES }),
+      toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
       nuclearkWh: parseAverageMWFor30minToKwh(nuclearAverageMW),
       allfossilkWh: lngkWh + coalkWh + oilkWh + otherFossilkWh,
@@ -175,19 +187,34 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
       const { url, format } = file;
-      const csv = await downloadCSV(
+      const { parser, blocksInDay, encoding, headerRows } =
+        format === "old"
+          ? {
+              parser: parseOldCSV,
+              ...OLD_CSV_FORMAT,
+            }
+          : {
+              parser: parseNewCSV,
+              ...NEW_CSV_FORMAT,
+            };
+
+      const csv = await downloadCSV(url, encoding);
+      const data = parser(csv);
+      console.log(
+        "url:",
         url,
-        format === "old" ? "Shift_JIS" : "utf-8"
+        "rows:",
+        data.length,
+        "days:",
+        data.length / blocksInDay
       );
-      const data = format === "old" ? parseOldCSV(csv) : parseNewCSV(csv);
-      console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
       return {
         tso: JapanTsoName.TEPCO,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,
         data,
-        raw: csv.slice(3),
+        raw: csv.slice(headerRows),
       };
     })
   );
