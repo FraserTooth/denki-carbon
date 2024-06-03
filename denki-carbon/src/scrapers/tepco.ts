@@ -2,10 +2,7 @@ import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
-import { db } from "../db";
-import { areaDataFiles } from "../schema";
 import { JapanTsoName } from "../const";
-import { eq } from "drizzle-orm";
 import { getCSVUrlsFromPage } from ".";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
@@ -67,7 +64,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
-      }
+      },
     ).toUTC();
     return {
       date,
@@ -123,7 +120,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
-      }
+      },
     ).toUTC();
     const lngkWh = parseAverageMWFor30minToKwh(lngAverageMW);
     const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
@@ -176,7 +173,7 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
       const { url, format } = file;
       const csv = await downloadCSV(
         url,
-        format === "old" ? "Shift_JIS" : "utf-8"
+        format === "old" ? "Shift_JIS" : "utf-8",
       );
       const data = format === "old" ? parseOldCSV(csv) : parseNewCSV(csv);
       console.log("url:", url, "rows:", data.length, "days:", data.length / 24);
@@ -188,7 +185,7 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
         data,
         raw: csv.slice(3),
       };
-    })
+    }),
   );
 
   return dataByCSV;

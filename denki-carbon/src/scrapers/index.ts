@@ -33,14 +33,14 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
         console.error(
           `Invalid row #${rowIndex} in ${file.url}:`,
-          JSON.stringify(row)
+          JSON.stringify(row),
         );
         console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid date or time");
       }
       return {
         dataId: [JapanTsoName.TEPCO, dateStringJST, timeFromStringJST].join(
-          "_"
+          "_",
         ),
         tso: file.tso,
         dateJST: dateStringJST,
@@ -62,11 +62,11 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         interconnectorskWh: row.interconnectorskWh.toString(),
         totalkWh: row.totalkWh.toString(),
       };
-    }
+    },
   );
 
   console.log(
-    `Attempting insert of ${insertValues.length} rows for ${file.url}`
+    `Attempting insert of ${insertValues.length} rows for ${file.url}`,
   );
   let insertedRowsCount = 0;
   for (let i = 0; i < insertValues.length; i += 900) {

@@ -20,8 +20,8 @@ const areaDataGetHandler = async (query: AreaDataGetParamsValidated) => {
     .where(
       and(
         eq(areaDataProcessed.tso, query.tso),
-        between(areaDataProcessed.datetimeFrom, query.from, query.to)
-      )
+        between(areaDataProcessed.datetimeFrom, query.from, query.to),
+      ),
     )
     .execute();
   return dbResult;
@@ -31,7 +31,7 @@ const app = new Elysia()
   .use(
     swagger({
       path: "/docs",
-    })
+    }),
   )
   .get("/v1/area_data", ({ query }) => areaDataGetHandler(query), {
     query: areaDataGetQueryParamsValidator,
@@ -39,5 +39,5 @@ const app = new Elysia()
   .listen(3000);
 
 console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
