@@ -29,7 +29,7 @@ export const areaDataFiles = pgTable("area_data_files", {
 });
 
 export const areaDataProcessed = pgTable("area_data_processed", {
-  id: serial("id").primaryKey(),
+  dataId: text("dataId").primaryKey(),
   tso: tsoEnum("tso").notNull(),
   dateJST: date("date_jst", { mode: "string" }).notNull(),
   timeFromJST: time("time_from_jst").notNull(),

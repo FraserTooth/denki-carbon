@@ -57,6 +57,13 @@
       "when": 1717335505818,
       "tag": "0007_hot_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1717336206671,
+      "tag": "0008_serious_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

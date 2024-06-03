@@ -166,26 +166,9 @@ export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
   const newCsvUrls = await getCSVUrlsFromPage(NEW_CSV_URL);
   console.log("newCsvUrls", newCsvUrls);
 
-  // Check if we already have the data
-  // TODO: remove in favor of upsert
-  const previousFiles = await db
-    .select()
-    .from(areaDataFiles)
-    .where(eq(areaDataFiles.tso, JapanTsoName.TEPCO));
-  const previousUrls = previousFiles.map((f) => f.url);
-  const newUrlsForOldCSV = oldCsvUrls.filter(
-    (url) => !previousUrls.includes(url)
-  );
-  const newUrlsForNewCSV = newCsvUrls.filter(
-    (url) => !previousUrls.includes(url)
-  );
-  if (newUrlsForOldCSV.length === 0 && newUrlsForNewCSV.length === 0) {
-    console.log("No new files to scrape");
-    return [];
-  }
   const urlsToDownload = [
-    ...newUrlsForOldCSV.map((url) => ({ url, format: "old" })),
-    ...newUrlsForNewCSV.map((url) => ({ url, format: "new" })),
+    ...oldCsvUrls.map((url) => ({ url, format: "old" })),
+    ...newCsvUrls.map((url) => ({ url, format: "new" })),
   ];
 
   const dataByCSV = await Promise.all(

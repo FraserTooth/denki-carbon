@@ -3,7 +3,6 @@ import { JapanTsoName } from "../const";
 import { AreaDataFileProcessed } from "../types";
 import { db } from "../db";
 import { areaDataFiles, areaDataProcessed } from "../schema";
-import { DateTime } from "luxon";
 import { getTepcoAreaData } from "./tepco";
 import { JSDOM } from "jsdom";
 
@@ -29,10 +28,8 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       const dateStringJST = row.fromUTC.setZone("Asia/Tokyo").toISODate();
       const timeFromStringJST = row.fromUTC
         .setZone("Asia/Tokyo")
-        .toISOTime({ suppressMilliseconds: true });
-      const timeToStringJST = row.toUTC
-        .setZone("Asia/Tokyo")
-        .toISOTime({ suppressMilliseconds: true });
+        .toFormat("HH:mm");
+      const timeToStringJST = row.toUTC.setZone("Asia/Tokyo").toFormat("HH:mm");
       if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
         console.error(
           `Invalid row #${rowIndex} in ${file.url}:`,
@@ -42,6 +39,9 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         throw new Error("Invalid date or time");
       }
       return {
+        dataId: [JapanTsoName.TEPCO, dateStringJST, timeFromStringJST].join(
+          "_"
+        ),
         tso: file.tso,
         dateJST: dateStringJST,
         timeFromJST: timeFromStringJST,
@@ -65,13 +65,20 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
     }
   );
 
-  console.log("Inserting", insertValues.length, "rows for", file.url);
+  console.log(
+    `Attempting insert of ${insertValues.length} rows for ${file.url}`
+  );
+  let insertedRowsCount = 0;
   for (let i = 0; i < insertValues.length; i += 900) {
-    console.log("Inserting rows", i, "to", i + 900);
+    console.debug("Inserting rows", i, "to", i + 900);
     const insertBatch = insertValues.slice(i, i + 900);
-    // TODO: make this an upsert
-    await db.insert(areaDataProcessed).values(insertBatch);
+    const response = await db
+      .insert(areaDataProcessed)
+      .values(insertBatch)
+      .onConflictDoNothing();
+    insertedRowsCount += response.rowCount ?? 0;
   }
+  console.log(`Inserted ${insertedRowsCount} rows for ${file.url}`);
 
   // Save the new file URLs
   console.log("Recording file", file.url);
