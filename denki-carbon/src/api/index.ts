@@ -1,10 +1,10 @@
 import { Elysia, Static, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
-import { db } from "./db";
-import { JapanTsoName } from "./const";
-import { areaDataProcessed } from "./schema";
+import { db } from "../db";
+import { JapanTsoName } from "../const";
+import { areaDataProcessed } from "../schema";
 import { between, eq, and } from "drizzle-orm";
-import { getTotalCarbonIntensityForAreaDataRow } from "./carbon";
+import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 
 const areaDataGetQueryParamsValidator = t.Object({
   tso: t.Enum(JapanTsoName),
