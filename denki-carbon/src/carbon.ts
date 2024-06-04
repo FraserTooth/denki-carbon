@@ -195,10 +195,14 @@ export const getTotalCarbonIntensityForAreaDataRow = (
       ];
     }
   })();
+  const totalKwh = parseFloat(row.totalkWh ?? "0");
+  if (totalKwh === 0) return 0; // Avoid division by zero
   const totalintensity =
     intensityContributors.reduce(
       (total, source) => total + onlyCountIfPositive(source),
       0
     ) / parseFloat(row.totalkWh ?? "0");
-  return totalintensity;
+  // Set to 3 decimal places
+  const roundedIntensity = Math.round(totalintensity * 1000) / 1000;
+  return roundedIntensity;
 };
