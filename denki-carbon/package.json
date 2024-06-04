@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",
+    "@tensorflow/tfjs": "^4.20.0",
     "csv-parse": "^5.5.6",
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",
