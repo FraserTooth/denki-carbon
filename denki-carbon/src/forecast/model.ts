@@ -2,6 +2,7 @@ import * as tf from "@tensorflow/tfjs";
 
 export const trainModel = async ({
   inputData,
+  inputFeatures,
   labelData,
   historyWindow,
   predictionWindow,
@@ -10,7 +11,8 @@ export const trainModel = async ({
   n_layers,
   callback,
 }: {
-  inputData: number[][];
+  inputData: number[][][];
+  inputFeatures: number;
   labelData: number[][];
   historyWindow: number;
   predictionWindow: number;
@@ -22,14 +24,20 @@ export const trainModel = async ({
   const batch_size = 32;
 
   // input dense layer
-  const input_layer_shape = historyWindow;
+  // number of params, number of items in each param
+  const inputLayerFeatures = inputFeatures;
+  const inputLayerTimesteps = historyWindow;
+  const input_layer_shape = [inputLayerFeatures, inputLayerTimesteps];
   const input_layer_neurons = 64;
 
   // LSTM
   const rnn_input_layer_features = 16;
   const rnn_input_layer_timesteps =
     input_layer_neurons / rnn_input_layer_features;
-  const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps]; // the shape have to match input layer's shape
+  const rnn_input_shape = [
+    rnn_input_layer_features * inputLayerFeatures,
+    rnn_input_layer_timesteps,
+  ]; // the shape have to match input layer's shape
   const rnn_output_neurons = 16; // number of neurons per LSTM's cell
 
   // output dense layer
@@ -37,16 +45,19 @@ export const trainModel = async ({
   const output_layer_neurons = predictionWindow;
 
   // Load Data in Tensor and Normalize
-  const inputTensor = tf.tensor2d(inputData, [
+  const inputTensor = tf.tensor3d(inputData, [
     inputData.length,
     inputData[0].length,
+    inputData[0][0].length,
   ]);
+  console.log("inputTensor", inputTensor.shape);
   const labelTensor = tf.tensor2d(labelData, [
     labelData.length,
     labelData[0].length,
   ]);
 
   const [xs, inputMax, inputMin] = normalizeTensorFit(inputTensor);
+  console.log("xs", xs.shape);
   const [ys, labelMax, labelMin] = normalizeTensorFit(labelTensor);
 
   // ## define model
@@ -56,11 +67,13 @@ export const trainModel = async ({
   model.add(
     tf.layers.dense({
       units: input_layer_neurons,
-      inputShape: [input_layer_shape],
+      inputShape: input_layer_shape,
       name: "InputLayer",
     })
   );
+  console.log("input_layer_shape", input_layer_shape);
   model.add(tf.layers.reshape({ targetShape: rnn_input_shape }));
+  console.log("rnn_input_shape", rnn_input_shape);
 
   let lstm_cells = [];
   for (let index = 0; index < n_layers; index++) {
@@ -89,6 +102,8 @@ export const trainModel = async ({
     loss: "meanSquaredError",
   });
 
+  console.log("model", model.summary());
+
   // ## fit model
 
   const hist = await model.fit(xs, ys, {
@@ -101,7 +116,6 @@ export const trainModel = async ({
     },
   });
 
-  // return { model: model, stats: hist };
   return {
     model: model,
     stats: hist,
@@ -147,18 +161,17 @@ export function makePredictions({
   labelMax,
   labelMin,
 }: {
-  predictionData: number[][];
+  predictionData: number[][][];
   model: tf.Sequential;
   inputMax: tf.Tensor;
   inputMin: tf.Tensor;
   labelMax: tf.Tensor;
   labelMin: tf.Tensor;
 }) {
-  // const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10); // old method
-
-  const predictionTensor = tf.tensor2d(predictionData, [
+  const predictionTensor = tf.tensor3d(predictionData, [
     predictionData.length,
     predictionData[0].length,
+    predictionData[0][0].length,
   ]);
   const normalizedInput = normalizeTensor(predictionTensor, inputMax, inputMin);
   const model_out = model.predict(normalizedInput) as tf.Tensor;
