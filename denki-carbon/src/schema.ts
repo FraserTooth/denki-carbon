@@ -7,6 +7,7 @@ import {
   numeric,
   pgEnum,
   integer,
+  serial,
 } from "drizzle-orm/pg-core";
 import { JapanTsoName } from "./const";
 
@@ -66,3 +67,13 @@ export const areaDataProcessed = pgTable("area_data_processed", {
   totalkWh: numeric("total_kwh"),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
+
+// export const carbonIntensityForecasts = pgTable("carbon_intensity_forecasts", {
+//   id: serial("forecast_id").primaryKey(),
+//   tso: tsoEnum("tso").notNull(),
+//   datetimeUTC: timestamp("datetime_utc", {
+//     withTimezone: true,
+//   }).notNull(),
+//   forecastedCarbonIntensity: numeric("forecasted_carbon_intensity"),
+//   createdAt: timestamp("last_updated").defaultNow(),
+// });

@@ -10,22 +10,34 @@ import { exit } from "process";
 // 48 blocks in a day
 const windowSize = 48;
 
-function computeSma(
+const nowJST = DateTime.now().setZone("Asia/Tokyo");
+const midnightToday = nowJST.startOf("day");
+
+const validationDataEnd = midnightToday.minus({ days: 1 });
+const validationDataStart = validationDataEnd.minus({ days: 1 });
+const validationEnd = midnightToday;
+
+const endOfTrainingData = midnightToday.minus({ days: 3 });
+const startOfTrainingData = endOfTrainingData.minus({ days: 14 });
+
+function getNextValueForEachWindow(
   data: number[],
   window_size: number
-): { set: number[]; avg: number }[] {
-  let r_avgs = [],
-    avg_prev = 0;
+): { set: number[]; next: number }[] {
+  let sets = [];
   for (let i = 0; i <= data.length - window_size; i++) {
-    let curr_avg = 0.0,
-      t = i + window_size;
-    for (let k = i; k < t && k <= data.length; k++) {
-      curr_avg += data[k] / window_size;
-    }
-    r_avgs.push({ set: data.slice(i, i + window_size), avg: curr_avg });
-    avg_prev = curr_avg;
+    const nextChunkValues = data.slice(i + 1, i + 3);
+    console.log("nextChunkValues", nextChunkValues);
+    const averageOfNextChunk =
+      nextChunkValues.reduce((a, b) => a + b, 0) / nextChunkValues.length;
+    console.log("averageOfNextChunk", averageOfNextChunk);
+
+    sets.push({
+      set: data.slice(i, i + window_size),
+      next: averageOfNextChunk,
+    });
   }
-  return r_avgs;
+  return sets;
 }
 
 /**
@@ -33,8 +45,7 @@ function computeSma(
  */
 
 // Get db training data
-const midnightToday = DateTime.now().startOf("day");
-const startOfTrainingData = midnightToday.minus({ days: 14 });
+
 const trainingDataAreaDataResult = await db
   .select()
   .from(areaDataProcessed)
@@ -44,7 +55,7 @@ const trainingDataAreaDataResult = await db
       between(
         areaDataProcessed.datetimeFrom,
         startOfTrainingData.toJSDate(),
-        midnightToday.toJSDate()
+        endOfTrainingData.toJSDate()
       )
     )
   )
@@ -61,10 +72,18 @@ const trainingSeriesPrepped = trainingDataAreaDataResult.map((row) => {
  * Train model
  */
 
-const sma = computeSma(trainingSeriesPrepped, windowSize);
+const trainingData = getNextValueForEachWindow(
+  trainingSeriesPrepped,
+  windowSize
+);
 
-const trainingDataX = sma.map((row) => row.set);
-const trainingDataY = sma.map((row) => row.avg);
+console.log(
+  "trainingData",
+  trainingData.slice(0, 5).map((row) => [row.set, row.next])
+);
+
+const trainingDataX = trainingData.map((row) => row.set);
+const trainingDataY = trainingData.map((row) => row.next);
 
 const trainingResult = await trainModel({
   X: trainingDataX,
@@ -79,11 +98,8 @@ const trainingResult = await trainModel({
 console.log(trainingResult.stats);
 
 /**
- * Make predictions
+ * Make predictions for validation window
  */
-
-const startOf2HoursAgo = DateTime.now().startOf("hour").minus({ hours: 2 });
-const windowAgo = startOf2HoursAgo.minus({ hours: windowSize / 2 });
 const predictionDataAreaDataResult = await db
   .select()
   .from(areaDataProcessed)
@@ -92,8 +108,8 @@ const predictionDataAreaDataResult = await db
       eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
       between(
         areaDataProcessed.datetimeFrom,
-        windowAgo.toJSDate(),
-        startOf2HoursAgo.toJSDate()
+        validationDataStart.toJSDate(),
+        validationDataEnd.toJSDate()
       )
     )
   )
@@ -102,13 +118,19 @@ const predictionDataAreaDataResult = await db
 console.log("predictionData", predictionDataAreaDataResult.length);
 const predictionSeriesPrepped = predictionDataAreaDataResult.map((row) => {
   const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
-  return carbonIntensity;
+  return { ...row, carbonIntensity };
 });
 
-// Make prediction for the next half window of blocks
-const finalPrediction: number[] = [];
-for (let i = 0; i < windowSize / 2; i++) {
-  const windowForPrediction = [...predictionSeriesPrepped, ...finalPrediction];
+// Make prediction for the next window of blocks
+const finalPrediction: { carbonIntensity: number; datetimeFrom: DateTime }[] =
+  [];
+let finalPredictionTimeStart = validationDataEnd;
+for (let i = 0; i < windowSize; i++) {
+  finalPredictionTimeStart = finalPredictionTimeStart.plus({ minutes: 30 });
+  const windowForPrediction = [
+    ...predictionSeriesPrepped.map((row) => row.carbonIntensity),
+    ...finalPrediction.map((row) => row.carbonIntensity),
+  ];
   // Get last window blocks
   const windowSlice = windowForPrediction.slice(
     windowForPrediction.length - windowSize
@@ -122,13 +144,59 @@ for (let i = 0; i < windowSize / 2; i++) {
     inputMin: trainingResult.normalize.inputMin,
   });
   const roundedPrediction = Math.round(predictions[0] * 1000) / 1000;
-  finalPrediction.push(roundedPrediction);
+  finalPrediction.push({
+    carbonIntensity: roundedPrediction,
+    datetimeFrom: finalPredictionTimeStart,
+  });
 }
 
-console.log("final Prediction", finalPrediction);
+console.log(
+  "final Prediction",
+  finalPrediction.map((row) => row.carbonIntensity)
+);
 
-const trendWithPrediction = [...predictionSeriesPrepped, ...finalPrediction];
+// Get actual data for the validation window
+const predictionActualAreaDataResult = await db
+  .select()
+  .from(areaDataProcessed)
+  .where(
+    and(
+      eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
+      between(
+        areaDataProcessed.datetimeFrom,
+        validationDataEnd.plus({ minutes: 30 }).toJSDate(),
+        validationEnd.toJSDate()
+      )
+    )
+  )
+  .orderBy(areaDataProcessed.datetimeFrom);
 
-console.log("trend plus prediction", trendWithPrediction);
+const actualSeriesPrepped = predictionActualAreaDataResult.map((row) => {
+  const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
+  return {
+    datetimeFrom: DateTime.fromJSDate(row.datetimeFrom),
+    carbonIntensity,
+  };
+});
+
+const leadUpWithActual = [
+  ...predictionSeriesPrepped,
+  { carbonIntensity: "|" },
+  ...actualSeriesPrepped,
+];
+console.log(
+  "actual",
+  leadUpWithActual.map((row) => row.carbonIntensity)
+);
+
+const leadUpWithPrediction = [
+  ...predictionSeriesPrepped,
+  { carbonIntensity: "|" },
+  ...finalPrediction,
+];
+console.log(
+  "prediction",
+  leadUpWithPrediction.map((row) => row.carbonIntensity)
+);
 
 exit(0);
