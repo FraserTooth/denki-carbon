@@ -1,12 +1,10 @@
 import { exit } from "process";
 import { JapanTsoName } from "../const.js";
-import { getCSVUrlsFromPage, runScraper } from "./index";
-import { getTohokuAreaData } from "./tohoku";
-import { getTepcoAreaData } from "./tepco";
+import { runScraper } from "./index";
 
-// await getTohokuAreaData();
-// await getTepcoAreaData();
-await runScraper(JapanTsoName.TEPCO);
-await runScraper(JapanTsoName.TOHOKU);
+const tepcoStats = await runScraper(JapanTsoName.TEPCO);
+console.log(tepcoStats);
+const tohokuStats = await runScraper(JapanTsoName.TOHOKU);
+console.log(tohokuStats);
 
 exit(0);

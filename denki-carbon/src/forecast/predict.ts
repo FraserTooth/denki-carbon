@@ -89,8 +89,6 @@ export const predictCarbonIntensity = async ({
     )
     .orderBy(areaDataProcessed.datetimeFrom);
 
-  console.log("predictionDataLength", predictionDataAreaDataResult.length);
-
   // Prepare the data
   const predictionSeriesPrepped = predictionDataAreaDataResult.map((row) => {
     const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
@@ -106,8 +104,6 @@ export const predictCarbonIntensity = async ({
     [windowSlice.map((row) => row.carbonIntensity)],
   ];
 
-  console.log("predictionData", predictionData);
-
   const predictions = makePredictions({
     model,
     predictionData,
@@ -116,7 +112,6 @@ export const predictCarbonIntensity = async ({
     inputMax: normalizationTensors.inputMax,
     inputMin: normalizationTensors.inputMin,
   });
-  console.log("predictions", predictions);
 
   const finalPrediction = predictions.map((prediction, index) => {
     const datetimeFrom = predictFrom.plus({
@@ -160,10 +155,25 @@ export const predictAndSaveCarbonIntensity = async (
         modelUsedId: modelDetails.id,
       };
     });
-  await db.insert(carbonIntensityForecasts).values(predictionsToSave);
+  const newRows = await db
+    .insert(carbonIntensityForecasts)
+    .values(predictionsToSave)
+    .returning();
+  return newRows;
 };
 
-// FOR TESTING
-// const predictFrom = DateTime.fromISO("2024-05-01T00:00:00.000+09:00");
-// await predictAndSaveCarbonIntensity(predictFrom, JapanTsoName.TOHOKU);
-// process.exit(0);
+export const makePredictionFromMostRecentData = async (tso: JapanTsoName) => {
+  const mostRecentAreaDataResult = await db
+    .select()
+    .from(areaDataProcessed)
+    .where(eq(areaDataProcessed.tso, tso))
+    .orderBy(desc(areaDataProcessed.datetimeFrom))
+    .limit(1);
+  if (mostRecentAreaDataResult.length === 0) {
+    throw new Error("No area data found");
+  }
+  const mostRecentAreaDataRow = mostRecentAreaDataResult[0];
+  const predictFrom = DateTime.fromJSDate(mostRecentAreaDataRow.datetimeFrom);
+  const newPredictions = await predictAndSaveCarbonIntensity(predictFrom, tso);
+  return newPredictions;
+};

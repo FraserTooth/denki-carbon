@@ -7,6 +7,8 @@ import { JSDOM } from "jsdom";
 import { getTohokuAreaData } from "./tohoku";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
+import { makePredictionFromMostRecentData } from "../forecast/predict";
+import { DateTime } from "luxon";
 
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
@@ -41,8 +43,14 @@ export const downloadCSV = async (url: string, encoding: string) => {
 };
 
 export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
+  let latestDatetimeSaved: DateTime | undefined;
   const insertValues: (typeof areaDataProcessed.$inferInsert)[] = file.data.map(
     (row, rowIndex) => {
+      // Update the latest datetime saved
+      if (!latestDatetimeSaved || row.fromUTC > latestDatetimeSaved) {
+        latestDatetimeSaved = row.fromUTC;
+      }
+
       const dateStringJST = row.fromUTC.setZone("Asia/Tokyo").toISODate();
       const timeFromStringJST = row.fromUTC
         .setZone("Asia/Tokyo")
@@ -125,18 +133,40 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         lastUpdated: new Date(),
       },
     });
+  return {
+    fileKey: scrapedFilesInsert.fileKey,
+    newRows: insertedRowsCount,
+    latestDatetimeSaved,
+  };
 };
 
 export const runScraper = async (utility: JapanTsoName) => {
-  if (utility === JapanTsoName.TOHOKU) {
-    const files = await getTohokuAreaData();
-    for (const file of files) {
-      await saveAreaDataFile(file);
+  const files = await (async () => {
+    if (utility === JapanTsoName.TOHOKU) {
+      return getTohokuAreaData();
+    } else if (utility === JapanTsoName.TEPCO) {
+      return getTepcoAreaData();
     }
-  } else if (utility === JapanTsoName.TEPCO) {
-    const files = await getTepcoAreaData();
-    for (const file of files) {
-      await saveAreaDataFile(file);
+    throw new Error(`Utility ${utility} not supported`);
+  })();
+
+  let newRowsTotal = 0;
+  let latestDatetimeSavedOfAllFiles: DateTime | undefined;
+  for (const file of files) {
+    const { newRows, latestDatetimeSaved } = await saveAreaDataFile(file);
+    newRowsTotal += newRows;
+    if (
+      !latestDatetimeSavedOfAllFiles ||
+      !latestDatetimeSaved ||
+      latestDatetimeSaved > latestDatetimeSavedOfAllFiles
+    ) {
+      latestDatetimeSavedOfAllFiles = latestDatetimeSaved;
     }
   }
+  const newForecastRows = await makePredictionFromMostRecentData(utility);
+  return {
+    newRows: newRowsTotal,
+    newForecastRows,
+    latestDatetimeSaved: latestDatetimeSavedOfAllFiles,
+  };
 };
