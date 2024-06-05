@@ -1,22 +1,28 @@
 import { loadModelAndTensorsFromFile, makePredictions } from "./model";
 import { db } from "../db";
-import { areaDataProcessed, carbonIntensityForecastModels } from "../schema";
+import {
+  areaDataProcessed,
+  carbonIntensityForecastModels,
+  carbonIntensityForecasts,
+} from "../schema";
 import { DateTime } from "luxon";
 import { eq, and, between, desc } from "drizzle-orm";
 import { JapanTsoName } from "../const";
 import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { getFilesInFolder } from "./utils";
-import { exit } from "process";
+import { LayersModel } from "@tensorflow/tfjs-layers";
+import { Rank, Tensor } from "@tensorflow/tfjs-core";
 require("@tensorflow/tfjs-node");
 
 // The number of blocks used to predict the next set of blocks
 export const HISTORY_WINDOW_LENGTH = 32;
+export const BLOCK_SIZE_MINUTES = 30;
 
-export const getLatestModel = async () => {
+export const getLatestModel = async (tso: JapanTsoName) => {
   const modelResult = await db
     .select()
     .from(carbonIntensityForecastModels)
-    .where(eq(carbonIntensityForecastModels.tso, JapanTsoName.TEPCO))
+    .where(eq(carbonIntensityForecastModels.tso, tso))
     .orderBy(desc(carbonIntensityForecastModels.createdAt));
   if (modelResult.length === 0) {
     throw new Error("No models found in database");
@@ -42,18 +48,29 @@ export const getLatestModel = async () => {
     mostRecentModelFilepath
   );
   console.log("Using model", mostRecentModel.modelName);
-  return { model, normalizationTensors };
+  return { model, normalizationTensors, modelDetails: mostRecentModel };
 };
 
-export const predictCarbonIntensity = async (
-  predictFrom: DateTime
-): Promise<{ datetimeFrom: DateTime; predictedCarbonIntensity: number }[]> => {
-  // Get models from db
-  const { model, normalizationTensors } = await getLatestModel();
-
+export const predictCarbonIntensity = async ({
+  tso,
+  model,
+  normalizationTensors,
+  predictFrom,
+}: {
+  tso: JapanTsoName;
+  model: LayersModel;
+  normalizationTensors: Record<string, Tensor<Rank>>;
+  predictFrom: DateTime;
+}): Promise<
+  {
+    datetimeFrom: DateTime;
+    datetimeTo: DateTime;
+    predictedCarbonIntensity: number;
+  }[]
+> => {
   // Get time WINDOW blocks before the prediction time
   const dataFrom = predictFrom.minus({
-    minutes: 30 * (HISTORY_WINDOW_LENGTH + 1),
+    minutes: BLOCK_SIZE_MINUTES * (HISTORY_WINDOW_LENGTH + 1),
   });
 
   // Get prediction data
@@ -62,7 +79,7 @@ export const predictCarbonIntensity = async (
     .from(areaDataProcessed)
     .where(
       and(
-        eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
+        eq(areaDataProcessed.tso, tso),
         between(
           areaDataProcessed.datetimeFrom,
           dataFrom.toJSDate(),
@@ -102,11 +119,51 @@ export const predictCarbonIntensity = async (
   console.log("predictions", predictions);
 
   const finalPrediction = predictions.map((prediction, index) => {
-    const datetimeFrom = predictFrom.plus({ minutes: 30 * (index + 1) });
+    const datetimeFrom = predictFrom.plus({
+      minutes: BLOCK_SIZE_MINUTES * (index + 1),
+    });
+    const datetimeTo = datetimeFrom.plus({ minutes: BLOCK_SIZE_MINUTES });
     return {
       predictedCarbonIntensity: prediction,
       datetimeFrom,
+      datetimeTo,
     };
   });
   return finalPrediction;
 };
+
+export const predictAndSaveCarbonIntensity = async (
+  predictFrom: DateTime,
+  tso: JapanTsoName
+) => {
+  const { model, normalizationTensors, modelDetails } =
+    await getLatestModel(tso);
+
+  const predictions = await predictCarbonIntensity({
+    tso,
+    model,
+    normalizationTensors,
+    predictFrom,
+  });
+
+  // Save predictions to db
+  const predictionsToSave: (typeof carbonIntensityForecasts.$inferInsert)[] =
+    predictions.map((prediction) => {
+      // Round to 3 decimal places
+      const roundedIntensity =
+        Math.round(prediction.predictedCarbonIntensity * 1000) / 1000;
+      return {
+        tso,
+        datetimeFrom: prediction.datetimeFrom.toJSDate(),
+        datetimeTo: prediction.datetimeTo.toJSDate(),
+        predictedCarbonIntensity: roundedIntensity.toString(),
+        modelUsedId: modelDetails.id,
+      };
+    });
+  await db.insert(carbonIntensityForecasts).values(predictionsToSave);
+};
+
+// FOR TESTING
+// const predictFrom = DateTime.fromISO("2024-05-01T00:00:00.000+09:00");
+// await predictAndSaveCarbonIntensity(predictFrom, JapanTsoName.TOHOKU);
+// process.exit(0);

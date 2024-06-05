@@ -15,7 +15,7 @@ const benchmarkStart = DateTime.now();
 const historyWindow = 32;
 // The number of blocks to predict
 const predictionWindow = 6;
-const tso = JapanTsoName.TEPCO;
+const tso = JapanTsoName.TOHOKU;
 
 const nowJST = DateTime.fromISO("2024-05-15T15:00:00.000").setZone(
   "Asia/Tokyo"

@@ -9,6 +9,7 @@ import {
   pgEnum,
   integer,
   serial,
+  index,
 } from "drizzle-orm/pg-core";
 import { JapanTsoName } from "./const";
 import { NormalisationFactors } from "./forecast/types";
@@ -89,12 +90,27 @@ export const carbonIntensityForecastModels = pgTable(
   }
 );
 
-// export const carbonIntensityForecasts = pgTable("carbon_intensity_forecasts", {
-//   id: serial("forecast_id").primaryKey(),
-//   tso: tsoEnum("tso").notNull(),
-//   datetimeUTC: timestamp("datetime_utc", {
-//     withTimezone: true,
-//   }).notNull(),
-//   forecastedCarbonIntensity: numeric("forecasted_carbon_intensity"),
-//   createdAt: timestamp("last_updated").defaultNow(),
-// });
+export const carbonIntensityForecasts = pgTable(
+  "carbon_intensity_forecasts",
+  {
+    id: serial("forecast_id").primaryKey(),
+    tso: tsoEnum("tso").notNull(),
+    datetimeFrom: timestamp("datetime_utc", {
+      withTimezone: true,
+    }).notNull(),
+    datetimeTo: timestamp("datetime_to", {
+      withTimezone: true,
+    }).notNull(),
+    predictedCarbonIntensity: numeric("predicted_carbon_intensity"),
+    modelUsedId: integer("model_used_id")
+      .notNull()
+      .references(() => carbonIntensityForecastModels.id),
+    createdAt: timestamp("last_updated").defaultNow(),
+  },
+  (table) => {
+    return {
+      tsoIdx: index("tso_idx").on(table.tso),
+      datetimeFromIdx: index("datetime_from_idx").on(table.datetimeFrom),
+    };
+  }
+);
