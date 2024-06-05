@@ -61,3 +61,6 @@ export enum GenerationSource {
    */
   OTHER = "other",
 }
+
+// Gets us to Watts, which is the lowest common denominator for power
+export const DECIMAL_PLACES = 3;

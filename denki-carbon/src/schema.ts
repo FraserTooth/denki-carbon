@@ -34,7 +34,11 @@ export const areaDataFiles = pgTable("area_data_files", {
   }).notNull(),
   url: text("url").notNull(),
   dataRows: integer("data_rows").notNull(),
-  lastUpdated: timestamp("last_updated").defaultNow(),
+  lastUpdated: timestamp("last_updated", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
 });
 
 export const areaDataProcessed = pgTable("area_data_processed", {
@@ -68,7 +72,11 @@ export const areaDataProcessed = pgTable("area_data_processed", {
   interconnectorskWh: numeric("interconnectors_kwh"),
   otherkWh: numeric("other_kwh"),
   totalkWh: numeric("total_kwh"),
-  lastUpdated: timestamp("last_updated").defaultNow(),
+  lastUpdated: timestamp("last_updated", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
 });
 
 export const carbonIntensityForecastModels = pgTable(
@@ -86,7 +94,11 @@ export const carbonIntensityForecastModels = pgTable(
     normalisationFactors: json("normalisation_factors")
       .notNull()
       .$type<NormalisationFactors>(),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   }
 );
 
@@ -101,11 +113,15 @@ export const carbonIntensityForecasts = pgTable(
     datetimeTo: timestamp("datetime_to", {
       withTimezone: true,
     }).notNull(),
-    predictedCarbonIntensity: numeric("predicted_carbon_intensity"),
+    predictedCarbonIntensity: numeric("predicted_carbon_intensity").notNull(),
     modelUsedId: integer("model_used_id")
       .notNull()
       .references(() => carbonIntensityForecastModels.id),
-    createdAt: timestamp("last_updated").defaultNow(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (table) => {
     return {
