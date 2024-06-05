@@ -7,3 +7,12 @@ export type TrainingData = {
   carbonIntensity: number;
   futureCarbonIntensities: number[];
 };
+
+export type TensorArray =
+  | number
+  | number[]
+  | number[][]
+  | number[][][]
+  | number[][][][]
+  | number[][][][][]
+  | number[][][][][][];

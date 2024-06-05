@@ -1,4 +1,6 @@
 import * as tf from "@tensorflow/tfjs";
+import { mkdir } from "fs";
+require("@tensorflow/tfjs-node");
 
 export const trainModel = async ({
   inputData,
@@ -162,7 +164,7 @@ export function makePredictions({
   labelMin,
 }: {
   predictionData: number[][][];
-  model: tf.Sequential;
+  model: tf.LayersModel;
   inputMax: tf.Tensor;
   inputMin: tf.Tensor;
   labelMax: tf.Tensor;
@@ -179,3 +181,43 @@ export function makePredictions({
 
   return Array.from(predictedResults.dataSync());
 }
+
+export const saveModelAndTensorsToFile = async (
+  model: tf.Sequential,
+  normalizationTensors: Record<string, tf.Tensor>,
+  folderpath: string
+) => {
+  // Make folder if it doesn't exist
+  mkdir(folderpath, { recursive: true }, console.error);
+
+  // Save model
+  await model.save(`file://${folderpath}`);
+
+  // Save normalization tensors
+  const normalizationAsArrays = Object.fromEntries(
+    Object.entries(normalizationTensors).map(([key, tensor]) => [
+      key,
+      Array.from(tensor.dataSync()),
+    ])
+  );
+  const tensorArrayJson = JSON.stringify(normalizationAsArrays);
+  await Bun.write(`${folderpath}/normalization.json`, tensorArrayJson);
+};
+
+export const loadModelAndTensorsFromFile = async (filepath: string) => {
+  const model = await tf.loadLayersModel(`file://${filepath}/model.json`);
+  const normalizationFile = Bun.file(`${filepath}/normalization.json`);
+  const normalization = await normalizationFile.json();
+  const normalizationTensors: Record<
+    string,
+    tf.Tensor<tf.Rank>
+  > = Object.fromEntries(
+    Object.entries(normalization).map(([key, value]) => {
+      return [key, tf.tensor(value as number)];
+    })
+  );
+  return {
+    model,
+    normalizationTensors,
+  };
+};
