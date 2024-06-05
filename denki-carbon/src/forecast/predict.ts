@@ -5,162 +5,108 @@ import { DateTime } from "luxon";
 import { eq, and, between, desc } from "drizzle-orm";
 import { JapanTsoName } from "../const";
 import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
+import { getFilesInFolder } from "./utils";
 import { exit } from "process";
-import { getBlockInDay, getFilesInFolder } from "./utils";
 require("@tensorflow/tfjs-node");
 
-const benchmarkStart = DateTime.now();
-
-const nowJST = DateTime.fromISO("2024-05-15T15:00:00.000").setZone(
-  "Asia/Tokyo"
-);
-const midnightToday = nowJST.startOf("day");
-const validationDataEnd = midnightToday.minus({ days: 1 });
-const validationDataStart = validationDataEnd.minus({ days: 1 });
-const validationEnd = midnightToday;
-
 // The number of blocks used to predict the next set of blocks
-const historyWindow = 32;
+export const HISTORY_WINDOW_LENGTH = 32;
 
-// Get models from db
-const modelResult = await db
-  .select()
-  .from(carbonIntensityForecastModels)
-  .where(eq(carbonIntensityForecastModels.tso, JapanTsoName.TEPCO))
-  .orderBy(desc(carbonIntensityForecastModels.createdAt));
+export const getLatestModel = async () => {
+  const modelResult = await db
+    .select()
+    .from(carbonIntensityForecastModels)
+    .where(eq(carbonIntensityForecastModels.tso, JapanTsoName.TEPCO))
+    .orderBy(desc(carbonIntensityForecastModels.createdAt));
+  if (modelResult.length === 0) {
+    throw new Error("No models found in database");
+  }
+  const mostRecentModel = modelResult[0];
 
-if (modelResult.length === 0) {
-  console.log("No models found in database");
-  exit(1);
-}
-const mostRecentModel = modelResult[0];
+  // Search files for models
+  const modelPath = "./temp/models";
+  const modelFiles = await getFilesInFolder(modelPath);
+  if (!modelFiles) {
+    throw new Error("No models found in files");
+  }
+  const mostRecentModelFilepath = modelFiles.find((file) => {
+    return file.includes(mostRecentModel.modelName);
+  });
+  if (!mostRecentModelFilepath) {
+    throw new Error(
+      `Target file ${mostRecentModel.modelName} not found in files`
+    );
+  }
 
-// Search files for models
-const modelPath = "./temp/models";
-const modelFiles = await getFilesInFolder(modelPath);
-if (!modelFiles) {
-  console.log("No models found in files");
-  exit(1);
-}
-const mostRecentModelFilepath = modelFiles.find((file) => {
-  return file.includes(mostRecentModel.modelName);
-});
-if (!mostRecentModelFilepath) {
-  console.log(`Target file ${mostRecentModel.modelName} not found in files`);
-  exit(1);
-}
+  const { model, normalizationTensors } = await loadModelAndTensorsFromFile(
+    mostRecentModelFilepath
+  );
+  console.log("Using model", mostRecentModel.modelName);
+  return { model, normalizationTensors };
+};
 
-const { model, normalizationTensors } = await loadModelAndTensorsFromFile(
-  mostRecentModelFilepath
-);
-console.log("Using model", mostRecentModel.modelName);
+export const predictCarbonIntensity = async (
+  predictFrom: DateTime
+): Promise<{ datetimeFrom: DateTime; predictedCarbonIntensity: number }[]> => {
+  // Get models from db
+  const { model, normalizationTensors } = await getLatestModel();
 
-/**
- * Make predictions for validation window
- */
-const predictionDataAreaDataResult = await db
-  .select()
-  .from(areaDataProcessed)
-  .where(
-    and(
-      eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
-      between(
-        areaDataProcessed.datetimeFrom,
-        validationDataStart.toJSDate(),
-        validationDataEnd.toJSDate()
-      )
-    )
-  )
-  .orderBy(areaDataProcessed.datetimeFrom);
-
-console.log("predictionData", predictionDataAreaDataResult.length);
-const predictionSeriesPrepped = predictionDataAreaDataResult.map((row) => {
-  const blockInDay = getBlockInDay(row.datetimeFrom);
-  const dayOfWeek = row.datetimeFrom.getDay();
-  const month = row.datetimeFrom.getMonth();
-  const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
-  return { ...row, carbonIntensity, blockInDay, dayOfWeek, month };
-});
-
-// Make prediction for the next window of blocks
-const windowSlice = predictionSeriesPrepped.slice(
-  predictionSeriesPrepped.length - historyWindow
-);
-const predictionData: number[][][] = [
-  [
-    windowSlice.map((row) => row.carbonIntensity),
-    // [windowSlice[windowSlice.length - 1].blockInDay + 1],
-    // [windowSlice[windowSlice.length - 1].dayOfWeek],
-    // [windowSlice[windowSlice.length - 1].month],
-  ],
-];
-console.log("predictionData", predictionData);
-const predictions = makePredictions({
-  model,
-  predictionData,
-  labelMax: normalizationTensors.labelMax,
-  labelMin: normalizationTensors.labelMin,
-  inputMax: normalizationTensors.inputMax,
-  inputMin: normalizationTensors.inputMin,
-});
-console.log("predictions", predictions);
-
-const finalPrediction: { carbonIntensity: number; datetimeFrom: Date }[] =
-  predictions.map((prediction, index) => {
-    return {
-      carbonIntensity: prediction,
-      datetimeFrom:
-        predictionSeriesPrepped[
-          predictionSeriesPrepped.length - historyWindow + index
-        ].datetimeFrom,
-    };
+  // Get time WINDOW blocks before the prediction time
+  const dataFrom = predictFrom.minus({
+    minutes: 30 * (HISTORY_WINDOW_LENGTH + 1),
   });
 
-// Get actual data for the validation window
-const predictionActualAreaDataResult = await db
-  .select()
-  .from(areaDataProcessed)
-  .where(
-    and(
-      eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
-      between(
-        areaDataProcessed.datetimeFrom,
-        validationDataEnd.plus({ minutes: 30 }).toJSDate(),
-        validationEnd.toJSDate()
+  // Get prediction data
+  const predictionDataAreaDataResult = await db
+    .select()
+    .from(areaDataProcessed)
+    .where(
+      and(
+        eq(areaDataProcessed.tso, JapanTsoName.TEPCO),
+        between(
+          areaDataProcessed.datetimeFrom,
+          dataFrom.toJSDate(),
+          predictFrom.toJSDate()
+        )
       )
     )
-  )
-  .orderBy(areaDataProcessed.datetimeFrom);
+    .orderBy(areaDataProcessed.datetimeFrom);
 
-const actualSeriesPrepped = predictionActualAreaDataResult.map((row) => {
-  const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
-  return {
-    datetimeFrom: DateTime.fromJSDate(row.datetimeFrom),
-    carbonIntensity,
-  };
-});
+  console.log("predictionDataLength", predictionDataAreaDataResult.length);
 
-const leadUpWithActual = [
-  ...predictionSeriesPrepped,
-  { carbonIntensity: "|" },
-  ...actualSeriesPrepped,
-];
-console.log(
-  "actual",
-  leadUpWithActual.map((row) => row.carbonIntensity)
-);
+  // Prepare the data
+  const predictionSeriesPrepped = predictionDataAreaDataResult.map((row) => {
+    const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(row);
+    return { ...row, carbonIntensity };
+  });
 
-const leadUpWithPrediction = [
-  ...predictionSeriesPrepped,
-  { carbonIntensity: "|" },
-  ...finalPrediction,
-];
-console.log(
-  "prediction",
-  leadUpWithPrediction.map((row) => row.carbonIntensity)
-);
+  // Ensure we have the right number of blocks for the input layer
+  const windowSlice = predictionSeriesPrepped.slice(
+    predictionSeriesPrepped.length - HISTORY_WINDOW_LENGTH
+  );
 
-const benchmarkEnd = DateTime.now();
-console.log("timeTaken", benchmarkEnd.diff(benchmarkStart).toISO());
+  const predictionData: number[][][] = [
+    [windowSlice.map((row) => row.carbonIntensity)],
+  ];
 
-exit(0);
+  console.log("predictionData", predictionData);
+
+  const predictions = makePredictions({
+    model,
+    predictionData,
+    labelMax: normalizationTensors.labelMax,
+    labelMin: normalizationTensors.labelMin,
+    inputMax: normalizationTensors.inputMax,
+    inputMin: normalizationTensors.inputMin,
+  });
+  console.log("predictions", predictions);
+
+  const finalPrediction = predictions.map((prediction, index) => {
+    const datetimeFrom = predictFrom.plus({ minutes: 30 * (index + 1) });
+    return {
+      predictedCarbonIntensity: prediction,
+      datetimeFrom,
+    };
+  });
+  return finalPrediction;
+};
