@@ -42,7 +42,7 @@ const areaDataGetResponseValidator200ElementHistoric = t.Object({
   totalkWh: t.Nullable(t.Number()),
   lastUpdated: t.Date(),
   carbonIntensity: t.Number(),
-  predictedCarbonIntensity: t.Optional(t.Number()),
+  averagePredictedCarbonIntensity: t.Optional(t.Number()),
 });
 
 const areaDataGetResponseValidator200ElementForecast = t.Object({
@@ -125,20 +125,7 @@ export const areaDataGetHandler = async (
         forecast.datetimeFrom.getTime() === row.datetimeFrom.getTime()
     );
     if (forecastsForRow.length === 0) return row;
-    // Sort descending by createdAt
-    forecastsForRow.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    );
-    // If datetimeFrom is in the future, use the most recent forecast
-    if (row.datetimeFrom.getTime() > new Date().getTime()) {
-      return {
-        ...row,
-        predictedCarbonIntensity: strToNum(
-          forecastsForRow[0].predictedCarbonIntensity
-        ),
-      };
-    }
-    // Otherwise, average the forecasts
+    // Average the forecasts
     const totalIntensity = forecastsForRow.reduce(
       (acc, forecast) => acc + parseFloat(forecast.predictedCarbonIntensity),
       0
