@@ -110,9 +110,6 @@ const trainingResult = await trainModel({
   callback: console.log,
 });
 
-console.log(trainingResult.stats);
-console.log("trainingResultNormalize", trainingResult.normalize);
-
 const benchmarkEnd = DateTime.now();
 console.log("timeTaken", benchmarkEnd.diff(benchmarkStart).toISO());
 
