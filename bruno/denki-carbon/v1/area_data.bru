@@ -5,13 +5,14 @@ meta {
 }
 
 get {
-  url: http://localhost:3000/v1/area_data?tso=tepco&from=2023-01-01T00:00:00Z&to=2023-01-02T00:00:00Z
+  url: http://localhost:3000/v1/area_data?tso=tohoku&from=2024-06-05T11:00:00Z&to=2024-06-06T00:00:00Z&includeForecast=true
   body: none
   auth: none
 }
 
 query {
-  tso: tepco
-  from: 2023-01-01T00:00:00Z
-  to: 2023-01-02T00:00:00Z
+  tso: tohoku
+  from: 2024-06-05T11:00:00Z
+  to: 2024-06-06T00:00:00Z
+  includeForecast: true
 }
