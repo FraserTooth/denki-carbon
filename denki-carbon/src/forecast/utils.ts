@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { JapanTsoName } from "../const";
 
 export const getBlockInDay = (datetime: Date): number => {
   return datetime.getHours() * 2 + Math.floor(datetime.getMinutes() / 30);
@@ -18,3 +19,13 @@ export async function getFilesInFolder(directoryPath: string) {
     console.error(err); // depending on your application, this `catch` block (as-is) may be inappropriate; consider instead, either not-catching and/or re-throwing a new Error with the previous err attached.
   }
 }
+
+/**
+ * Create a model name based on the TSO and a time-based hash suffix
+ *
+ * @param tso
+ * @returns {string}
+ */
+export const getModelName = (tso: JapanTsoName): string => {
+  return `carbonintensity-${tso}-${Date.now().toString(36)}`;
+};

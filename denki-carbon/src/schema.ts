@@ -1,6 +1,7 @@
 import {
   pgTable,
   text,
+  json,
   timestamp,
   date,
   time,
@@ -10,6 +11,7 @@ import {
   serial,
 } from "drizzle-orm/pg-core";
 import { JapanTsoName } from "./const";
+import { NormalisationFactors } from "./forecast/types";
 
 /**
  * Converts an enum to a Postgres enum for Drizzle
@@ -67,6 +69,25 @@ export const areaDataProcessed = pgTable("area_data_processed", {
   totalkWh: numeric("total_kwh"),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
+
+export const carbonIntensityForecastModels = pgTable(
+  "carbon_intensity_forecast_models",
+  {
+    id: serial("model_id").primaryKey(),
+    tso: tsoEnum("tso").notNull(),
+    trainingDataFrom: timestamp("training_data_from", {
+      withTimezone: true,
+    }).notNull(),
+    trainingDataTo: timestamp("training_data_to", {
+      withTimezone: true,
+    }).notNull(),
+    modelName: text("model_name").notNull(),
+    normalisationFactors: json("normalisation_factors")
+      .notNull()
+      .$type<NormalisationFactors>(),
+    createdAt: timestamp("created_at").defaultNow(),
+  }
+);
 
 // export const carbonIntensityForecasts = pgTable("carbon_intensity_forecasts", {
 //   id: serial("forecast_id").primaryKey(),

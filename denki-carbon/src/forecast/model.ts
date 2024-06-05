@@ -1,11 +1,17 @@
 import * as tf from "@tensorflow/tfjs";
 import { mkdir } from "fs";
+import { db } from "../db";
+import { carbonIntensityForecastModels } from "../schema";
+import { JapanTsoName } from "../const";
+import { DateTime } from "luxon";
+import { NormalisationFactors } from "./types";
 require("@tensorflow/tfjs-node");
 
 export const trainModel = async ({
   inputData,
   inputFeatures,
   labelData,
+  modelName,
   historyWindow,
   predictionWindow,
   n_epochs,
@@ -16,6 +22,7 @@ export const trainModel = async ({
   inputData: number[][][];
   inputFeatures: number;
   labelData: number[][];
+  modelName: string;
   historyWindow: number;
   predictionWindow: number;
   n_epochs: number;
@@ -64,7 +71,7 @@ export const trainModel = async ({
 
   // ## define model
 
-  const model = tf.sequential();
+  const model = tf.sequential({ name: modelName });
 
   model.add(
     tf.layers.dense({
@@ -73,9 +80,7 @@ export const trainModel = async ({
       name: "InputLayer",
     })
   );
-  console.log("input_layer_shape", input_layer_shape);
   model.add(tf.layers.reshape({ targetShape: rnn_input_shape }));
-  console.log("rnn_input_shape", rnn_input_shape);
 
   let lstm_cells = [];
   for (let index = 0; index < n_layers; index++) {
@@ -182,26 +187,59 @@ export function makePredictions({
   return Array.from(predictedResults.dataSync());
 }
 
-export const saveModelAndTensorsToFile = async (
-  model: tf.Sequential,
-  normalizationTensors: Record<string, tf.Tensor>,
-  folderpath: string
-) => {
+/**
+ * Saves model and normalization tensors to a folder
+ * Registers the model in the database
+ *
+ * @param model
+ * @param normalizationTensors
+ * @param folderpath
+ * @param tso
+ * @param trainingDataFrom from which date the training data was taken
+ * @param trainingDataTo to which date the training data was taken
+ */
+export const saveModel = async ({
+  model,
+  normalizationTensors,
+  folderpath,
+  tso,
+  trainingDataFrom,
+  trainingDataTo,
+}: {
+  model: tf.Sequential;
+  normalizationTensors: Record<string, tf.Tensor>;
+  folderpath: string;
+  tso: JapanTsoName;
+  trainingDataFrom: DateTime;
+  trainingDataTo: DateTime;
+}) => {
+  // Get the model name
+  const modelName = model.name;
+  const modelFolder = `${folderpath}/${modelName}`;
+
   // Make folder if it doesn't exist
-  mkdir(folderpath, { recursive: true }, console.error);
+  mkdir(modelFolder, { recursive: true }, console.error);
 
   // Save model
-  await model.save(`file://${folderpath}`);
+  await model.save(`file://${modelFolder}`);
 
   // Save normalization tensors
-  const normalizationAsArrays = Object.fromEntries(
-    Object.entries(normalizationTensors).map(([key, tensor]) => [
-      key,
-      Array.from(tensor.dataSync()),
-    ])
-  );
-  const tensorArrayJson = JSON.stringify(normalizationAsArrays);
-  await Bun.write(`${folderpath}/normalization.json`, tensorArrayJson);
+  const normalisationFactors: NormalisationFactors = {
+    inputMax: normalizationTensors.inputMax.arraySync(),
+    inputMin: normalizationTensors.inputMin.arraySync(),
+    labelMax: normalizationTensors.labelMax.arraySync(),
+    labelMin: normalizationTensors.labelMin.arraySync(),
+  };
+  const tensorArrayJson = JSON.stringify(normalisationFactors);
+  await Bun.write(`${modelFolder}/normalization.json`, tensorArrayJson);
+  const insertModel: typeof carbonIntensityForecastModels.$inferInsert = {
+    tso,
+    trainingDataFrom: trainingDataFrom.toJSDate(),
+    trainingDataTo: trainingDataTo.toJSDate(),
+    modelName,
+    normalisationFactors: normalisationFactors,
+  };
+  await db.insert(carbonIntensityForecastModels).values(insertModel).execute();
 };
 
 export const loadModelAndTensorsFromFile = async (filepath: string) => {

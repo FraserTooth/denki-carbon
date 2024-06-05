@@ -16,3 +16,10 @@ export type TensorArray =
   | number[][][][]
   | number[][][][][]
   | number[][][][][][];
+
+export type NormalisationFactors = {
+  inputMax: TensorArray;
+  inputMin: TensorArray;
+  labelMax: TensorArray;
+  labelMin: TensorArray;
+};

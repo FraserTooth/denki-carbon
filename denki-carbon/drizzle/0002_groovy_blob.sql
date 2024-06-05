@@ -1,0 +1,1 @@
+ALTER TABLE "carbon_intensity_forecast_models" RENAME COLUMN "last_updated" TO "createdAt";

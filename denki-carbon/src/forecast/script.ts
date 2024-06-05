@@ -8,6 +8,7 @@ import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { exit } from "process";
 import { TrainingData } from "./types";
 import { mkdir } from "fs";
+import { getModelName } from "./utils";
 require("@tensorflow/tfjs-node");
 
 const benchmarkStart = DateTime.now();
@@ -99,10 +100,12 @@ const trainingDataY: number[][] = trainingData.map(
   (row) => row.futureCarbonIntensities
 );
 
+const modelName = getModelName(JapanTsoName.TEPCO);
 const trainingResult = await trainModel({
   inputData: trainingDataX,
   inputFeatures: trainingDataX[0].length,
   labelData: trainingDataY,
+  modelName,
   historyWindow,
   predictionWindow,
   n_epochs: 5,
