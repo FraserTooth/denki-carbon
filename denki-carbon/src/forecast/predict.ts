@@ -1,8 +1,8 @@
 import { loadModelAndTensorsFromFile, makePredictions } from "./model";
 import { db } from "../db";
-import { areaDataProcessed } from "../schema";
+import { areaDataProcessed, carbonIntensityForecastModels } from "../schema";
 import { DateTime } from "luxon";
-import { eq, and, between } from "drizzle-orm";
+import { eq, and, between, desc } from "drizzle-orm";
 import { JapanTsoName } from "../const";
 import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { exit } from "process";
@@ -22,23 +22,38 @@ const validationEnd = midnightToday;
 // The number of blocks used to predict the next set of blocks
 const historyWindow = 32;
 
+// Get models from db
+const modelResult = await db
+  .select()
+  .from(carbonIntensityForecastModels)
+  .where(eq(carbonIntensityForecastModels.tso, JapanTsoName.TEPCO))
+  .orderBy(desc(carbonIntensityForecastModels.createdAt));
+
+if (modelResult.length === 0) {
+  console.log("No models found in database");
+  exit(1);
+}
+const mostRecentModel = modelResult[0];
+
 // Search files for models
-// TODO: save this in a config file
 const modelPath = "./temp/models";
 const modelFiles = await getFilesInFolder(modelPath);
 if (!modelFiles) {
-  console.log("No models found");
+  console.log("No models found in files");
   exit(1);
 }
-// Sort files by name descending
-modelFiles.sort((a, b) => {
-  return b.localeCompare(a);
+const mostRecentModelFilepath = modelFiles.find((file) => {
+  return file.includes(mostRecentModel.modelName);
 });
-console.log("modelFiles", modelFiles);
+if (!mostRecentModelFilepath) {
+  console.log(`Target file ${mostRecentModel.modelName} not found in files`);
+  exit(1);
+}
 
 const { model, normalizationTensors } = await loadModelAndTensorsFromFile(
-  modelFiles[0]
+  mostRecentModelFilepath
 );
+console.log("Using model", mostRecentModel.modelName);
 
 /**
  * Make predictions for validation window
