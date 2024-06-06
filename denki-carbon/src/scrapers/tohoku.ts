@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 
@@ -175,7 +175,9 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   return data;
 };
 
-export const getTohokuAreaData = async (): Promise<AreaDataFileProcessed[]> => {
+export const getTohokuAreaData = async (
+  scrapeType: ScrapeType
+): Promise<AreaDataFileProcessed[]> => {
   console.log("TOHOKU scraper running");
 
   const oldCsvUrls = await getCSVUrlsFromPage(
@@ -184,7 +186,7 @@ export const getTohokuAreaData = async (): Promise<AreaDataFileProcessed[]> => {
     RegExp(/juyo_\d\d\d\d_tohoku_\dQ.csv$/),
     "https://setsuden.nw.tohoku-epco.co.jp/"
   );
-  console.log("oldCsvUrls", oldCsvUrls);
+  const oldUrls = oldCsvUrls.map((url) => ({ url, format: "old" }));
 
   const newCsvUrlsMonthlyConfirmed = await getCSVUrlsFromPage(
     CSV_URL,
@@ -192,16 +194,25 @@ export const getTohokuAreaData = async (): Promise<AreaDataFileProcessed[]> => {
     RegExp(/eria_jukyu_\d\d\d\d\d\d_\d\d.csv$/),
     "https://setsuden.nw.tohoku-epco.co.jp/"
   );
-  console.log("newCsvUrlsMonthlyConfirmed", newCsvUrlsMonthlyConfirmed);
+  const newUrls = newCsvUrlsMonthlyConfirmed.map((url) => ({
+    url,
+    format: "new",
+  }));
 
   const newCsvUrlsDaily = getRealTimeCSVUrls();
-  console.log("newCsvUrlsDaily", newCsvUrlsDaily);
+  const newUrlsDaily = newCsvUrlsDaily.map((url) => ({ url, format: "new" }));
 
-  const urlsToDownload = [
-    ...oldCsvUrls.map((url) => ({ url, format: "old" })),
-    ...newCsvUrlsMonthlyConfirmed.map((url) => ({ url, format: "new" })),
-    ...newCsvUrlsDaily.map((url) => ({ url, format: "new" })),
-  ];
+  const urlsToDownload = (() => {
+    if (scrapeType === ScrapeType.All)
+      return [...oldUrls, ...newUrls, ...newUrlsDaily];
+    if (scrapeType === ScrapeType.New) return [...newUrls, ...newUrlsDaily];
+    // Sort so that the latest file is last
+    if (scrapeType === ScrapeType.Latest) return [...newUrlsDaily];
+    throw new Error(`Invalid scrape type: ${scrapeType}`);
+  })();
+
+  console.debug("urlsToDownload", urlsToDownload);
+
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
       const { url, format } = file;

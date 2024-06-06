@@ -3,7 +3,7 @@ import iconv from "iconv-lite";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { getCSVUrlsFromPage } from ".";
+import { ScrapeType, getCSVUrlsFromPage } from ".";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
 
@@ -163,26 +163,34 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   return data;
 };
 
-export const getTepcoAreaData = async (): Promise<AreaDataFileProcessed[]> => {
+export const getTepcoAreaData = async (
+  scrapeType: ScrapeType
+): Promise<AreaDataFileProcessed[]> => {
   console.log("TEPCO scraper running");
   const oldCsvUrls = await getCSVUrlsFromPage(
     OLD_CSV_URL,
     RegExp(/.csv$/),
     "https://www.tepco.co.jp"
   );
-  console.log("oldCsvUrls", oldCsvUrls);
+  const oldUrls = oldCsvUrls.map((url) => ({ url, format: "old" }));
 
   const newCsvUrls = await getCSVUrlsFromPage(
     NEW_CSV_URL,
     RegExp(/.csv$/),
     "https://www.tepco.co.jp"
   );
-  console.log("newCsvUrls", newCsvUrls);
+  const newUrls = newCsvUrls.map((url) => ({ url, format: "new" }));
 
-  const urlsToDownload = [
-    ...oldCsvUrls.map((url) => ({ url, format: "old" })),
-    ...newCsvUrls.map((url) => ({ url, format: "new" })),
-  ];
+  const urlsToDownload = (() => {
+    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
+    if (scrapeType === ScrapeType.New) return [...newUrls];
+    // Sort so that the latest file is last
+    if (scrapeType === ScrapeType.Latest)
+      return [newUrls.sort()[newUrls.length - 1]];
+    throw new Error(`Invalid scrape type: ${scrapeType}`);
+  })();
+
+  console.debug("urlsToDownload", urlsToDownload);
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {

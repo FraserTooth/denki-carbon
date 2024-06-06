@@ -1,6 +1,6 @@
 import { exit } from "process";
 import { JapanTsoName } from "../const.js";
-import { SUPPORTED_TSOS, runScraper } from "./index";
+import { SUPPORTED_TSOS, ScrapeType, runScraper } from "./index";
 import { Argument, program } from "commander";
 import { DateTime } from "luxon";
 
@@ -20,7 +20,12 @@ program
       ...Object.values(JapanTsoName),
     ])
   )
-  .action(async (tso: JapanTsoName | "all") => {
+  .addArgument(
+    new Argument("scrapeType", "The type of data to scrape").choices(
+      Object.values(ScrapeType)
+    )
+  )
+  .action(async (tso: JapanTsoName | "all", scrapeType: ScrapeType) => {
     console.log(`Running scraper for ${tso}...`);
     const statsArray: Partial<{
       newRows: number;
@@ -30,11 +35,11 @@ program
     if (tso === "all") {
       for (const tso of SUPPORTED_TSOS) {
         console.log(`Running scraper for ${tso}...`);
-        const stats = await runScraper(tso);
+        const stats = await runScraper(tso, scrapeType);
         statsArray.push(stats);
       }
     } else {
-      const stats = await runScraper(tso);
+      const stats = await runScraper(tso, scrapeType);
       statsArray.push(stats);
     }
     console.log("\n---- Scraper finished ----");

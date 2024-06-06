@@ -12,6 +12,15 @@ import { DateTime } from "luxon";
 
 export const SUPPORTED_TSOS = [JapanTsoName.TOHOKU, JapanTsoName.TEPCO];
 
+export enum ScrapeType {
+  // Scrape all data, including old data
+  All = "all",
+  // Scrape only new data
+  New = "new",
+  // Scrape only most recent file
+  Latest = "latest",
+}
+
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
   urlRegex: RegExp,
@@ -142,12 +151,15 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   };
 };
 
-export const runScraper = async (utility: JapanTsoName) => {
+export const runScraper = async (
+  utility: JapanTsoName,
+  scrapeType: ScrapeType
+) => {
   const files = await (async () => {
     if (utility === JapanTsoName.TOHOKU) {
-      return getTohokuAreaData();
+      return getTohokuAreaData(scrapeType);
     } else if (utility === JapanTsoName.TEPCO) {
-      return getTepcoAreaData();
+      return getTepcoAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
