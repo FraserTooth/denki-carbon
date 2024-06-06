@@ -18,13 +18,14 @@
     "up:debug": "docker-compose up",
     "down": "docker-compose down",
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose",
-    "scrape": "bun run ./src/scrapers/scripts.ts",
+    "scrape": "bun run ./src/scrapers/cli.ts",
     "model:train": "bun run ./src/forecast/train.ts"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",
     "@tensorflow/tfjs": "^4.20.0",
     "@tensorflow/tfjs-node": "^4.20.0",
+    "commander": "^12.1.0",
     "csv-parse": "^5.5.6",
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",

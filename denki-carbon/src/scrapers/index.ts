@@ -10,6 +10,8 @@ import iconv from "iconv-lite";
 import { makePredictionFromMostRecentData } from "../forecast/predict";
 import { DateTime } from "luxon";
 
+export const SUPPORTED_TSOS = [JapanTsoName.TOHOKU, JapanTsoName.TEPCO];
+
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
   urlRegex: RegExp,
@@ -165,6 +167,7 @@ export const runScraper = async (utility: JapanTsoName) => {
   }
   const newForecastRows = await makePredictionFromMostRecentData(utility);
   return {
+    tso: utility,
     newRows: newRowsTotal,
     newForecastRows,
     latestDatetimeSaved: latestDatetimeSavedOfAllFiles,
