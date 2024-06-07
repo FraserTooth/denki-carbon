@@ -12,7 +12,13 @@ bun migrate
 
 ## Development
 
-To start the development server locally run:
+To seed the database, train models and make your first Carbon Intensity prediction for all TSOs, run:
+
+```bash
+bun setup
+```
+
+To start the API development server locally run:
 
 ```bash
 bun dev

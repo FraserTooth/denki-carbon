@@ -7,10 +7,7 @@ import { JSDOM } from "jsdom";
 import { getTohokuAreaData } from "./tohoku";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
-import { makePredictionFromMostRecentData } from "../forecast/predict";
 import { DateTime } from "luxon";
-
-export const SUPPORTED_TSOS = [JapanTsoName.TOHOKU, JapanTsoName.TEPCO];
 
 export enum ScrapeType {
   // Scrape all data, including old data

@@ -20,7 +20,8 @@
     "scrape": "bun run ./src/scrapers/cli.ts",
     "seed": "bun run scrape --tso all --scrape all",
     "cron": "bun run scrape --tso all --scrape latest --predict",
-    "model:train": "bun run ./src/forecast/train.ts",
+    "train": "bun run ./src/forecast/cli.ts",
+    "setup": "bun seed && bun train --tso all && bun cron",
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {

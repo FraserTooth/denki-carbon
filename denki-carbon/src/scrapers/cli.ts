@@ -1,7 +1,7 @@
 import { exit } from "process";
-import { JapanTsoName } from "../const.js";
-import { SUPPORTED_TSOS, ScrapeType, runScraper } from "./index";
-import { Argument, program, Option } from "commander";
+import { JapanTsoName, SUPPORTED_TSOS } from "../const";
+import { ScrapeType, runScraper } from "./index";
+import { program, Option } from "commander";
 import { DateTime } from "luxon";
 import { makePredictionFromMostRecentData } from "../forecast/predict.js";
 
