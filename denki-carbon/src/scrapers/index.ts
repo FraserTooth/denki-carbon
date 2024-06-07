@@ -177,11 +177,9 @@ export const runScraper = async (
       latestDatetimeSavedOfAllFiles = latestDatetimeSaved;
     }
   }
-  const newForecastRows = await makePredictionFromMostRecentData(utility);
   return {
     tso: utility,
     newRows: newRowsTotal,
-    newForecastRows,
     latestDatetimeSaved: latestDatetimeSavedOfAllFiles,
   };
 };

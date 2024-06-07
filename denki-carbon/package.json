@@ -17,9 +17,11 @@
     "up": "docker-compose up -d --force-recreate --build",
     "up:debug": "docker-compose up",
     "down": "docker-compose down",
-    "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose",
     "scrape": "bun run ./src/scrapers/cli.ts",
-    "model:train": "bun run ./src/forecast/train.ts"
+    "seed": "bun run scrape --tso all --scrape all",
+    "cron": "bun run scrape --tso all --scrape latest --predict",
+    "model:train": "bun run ./src/forecast/train.ts",
+    "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",
