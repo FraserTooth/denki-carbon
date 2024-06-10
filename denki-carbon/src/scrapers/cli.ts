@@ -3,7 +3,7 @@ import { JapanTsoName, SUPPORTED_TSOS } from "../const";
 import { ScrapeType, runScraper } from "./index";
 import { program, Option } from "commander";
 import { DateTime } from "luxon";
-import { makePredictionFromMostRecentData } from "../forecast/predict.js";
+import { makePredictionFromMostRecentData } from "../forecast/predict";
 
 program.exitOverride((err) => {
   console.debug(err.code);

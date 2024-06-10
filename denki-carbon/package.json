@@ -15,7 +15,7 @@
     "docker:stop": "docker stop $(docker ps -a -q --filter ancestor=denki-carbon)",
     "docker:logs": "docker logs --follow $(docker ps -a -q --filter ancestor=denki-carbon)",
     "up": "docker-compose up -d --force-recreate --build",
-    "up:debug": "docker-compose up",
+    "up:debug": "docker-compose up  --force-recreate --build",
     "down": "docker-compose down",
     "scrape": "bun run ./src/scrapers/cli.ts",
     "seed": "bun run scrape --tso all --scrape all",
