@@ -21,15 +21,17 @@ RUN npm rebuild @tensorflow/tfjs-node --build-addon-from-source
 # copy node_modules from temp directory
 # then copy all (non-ignored) project files into the image
 FROM base AS prerelease
-COPY --from=install /temp/dev/node_modules node_modules
+RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr bash
+COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 
 # tests
 ENV NODE_ENV=production
-# RUN bun test
+RUN bun test
 
 # copy production dependencies and source code into final image
 FROM base AS release
+RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr bash
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/src ./src
 COPY --from=prerelease /usr/src/app/drizzle ./drizzle
