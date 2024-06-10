@@ -8,6 +8,7 @@ import { getTohokuAreaData } from "./tohoku";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { DateTime } from "luxon";
+import { getChubuAreaData } from "./chubu";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -26,6 +27,7 @@ export const getCSVUrlsFromPage = async (
   const csvUrls: string[] = [];
   const response = await fetch(pageUrl);
   const text = await response.text();
+  console.debug("text", text);
   const doc = new JSDOM(text).window.document;
   const links = doc.querySelectorAll("a");
   links.forEach((link: any) => {
@@ -157,6 +159,8 @@ export const runScraper = async (
       return getTohokuAreaData(scrapeType);
     } else if (utility === JapanTsoName.TEPCO) {
       return getTepcoAreaData(scrapeType);
+    } else if (utility === JapanTsoName.CHUBU) {
+      return getChubuAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();

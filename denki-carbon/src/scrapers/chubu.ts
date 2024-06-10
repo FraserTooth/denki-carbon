@@ -3,17 +3,23 @@ import iconv from "iconv-lite";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
+import * as yauzlp from "yauzl-promise";
 
-const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
-
-const NEW_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu-j.html`;
+const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
   encoding: "Shift_JIS",
-  headerRows: 3,
+  headerRows: 5,
   intervalMinutes: 60,
+};
+
+const NEW_CSV_FORMAT_ZIP = {
+  blocksInDay: 48,
+  encoding: "Shift_JIS",
+  headerRows: 2,
+  intervalMinutes: 30,
 };
 
 const NEW_CSV_FORMAT = {
@@ -23,11 +29,68 @@ const NEW_CSV_FORMAT = {
   intervalMinutes: 30,
 };
 
+/**
+ * Chubu's CSV page is dynamically rendered, but we can just call the PHP script directly
+ */
+const getChubuCSVUrls = async (): Promise<
+  {
+    url: string;
+    format: "old" | "new";
+  }[]
+> => {
+  const response = await fetch(CSV_URL);
+
+  const data = (await response.json()) as { category: string; path: string }[];
+  const areaData = data.filter(
+    (d) =>
+      d.category === "年別エリア需給実績" ||
+      d.category === "直近のエリア需要実績"
+  );
+
+  const urls: { url: string; format: "old" | "new" }[] = areaData.map((d) => {
+    const url = `https://powergrid.chuden.co.jp${d.path}`;
+    const format = d.path.includes("areabalance") ? "old" : "new";
+    return { url, format };
+  });
+  return urls;
+};
+
 const downloadCSV = async (url: string, encoding: string) => {
   const response = await fetch(url);
   const dataResponse = await response.arrayBuffer();
-  const buffer = Buffer.from(dataResponse);
-  const decoded = iconv.decode(buffer, encoding);
+
+  const decoded = await (async () => {
+    if (url.includes("csv")) {
+      const buffer = Buffer.from(dataResponse);
+      return iconv.decode(buffer, encoding);
+    } else if (url.includes("zip")) {
+      const zipBuffer = Buffer.from(dataResponse);
+      const buffer = await (async () => {
+        const zip = await yauzlp.fromBuffer(zipBuffer);
+        const chunks: Uint8Array[] = [];
+        try {
+          for await (const entry of zip) {
+            if (entry.filename.endsWith("/")) {
+              // Directory, we can ignore
+              continue;
+            } else {
+              // We currently just assume the ZIP file only contains one CSV file
+              const readStream = await entry.openReadStream();
+              for await (const chunk of readStream) {
+                chunks.push(chunk);
+              }
+            }
+          }
+        } finally {
+          await zip.close();
+          return Buffer.concat(chunks);
+        }
+      })();
+      return iconv.decode(buffer, encoding);
+    } else {
+      throw new Error(`Unsupported file type: ${url}`);
+    }
+  })();
 
   const records: string[][] = parse(decoded, {
     relax_column_count: true,
@@ -38,8 +101,8 @@ const downloadCSV = async (url: string, encoding: string) => {
 
 const parseDpToKwh = (raw: string): number => {
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in 万kWh, so multiply by 10000 to get kWh
-  return parseFloat(cleaned) * 10000;
+  // Values are in MWh, so multiply by 1000 to get kWh
+  return parseFloat(cleaned) * 1000;
 };
 
 const parseAverageMWFor30minToKwh = (raw: string): number => {
@@ -51,25 +114,23 @@ const parseAverageMWFor30minToKwh = (raw: string): number => {
 };
 
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  // Trim 3 header rows
   const dataRows = csv.slice(OLD_CSV_FORMAT.headerRows);
   const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
     const [
       date, // "DATE"
       time, // "TIME"
-      totalDemand_daMWh, // "東京エリア需要"
-      nuclear_daMWh, // "原子力"
-      allfossil_daMWh, // "火力"
-      hydro_daMWh, // "水力"
-      geothermal_daMWh, // "地熱"
-      biomass_daMWh, // "バイオマス"
-      solarOutput_daMWh, // "太陽光発電実績"
-      solarThrottling_daMWh, // "太陽光出力制御量"
-      windOutput_daMWh, // "風力発電実績"
-      windThrottling_daMWh, // "風力出力制御量"
-      pumpedStorage_daMWh, // "揚水"
-      interconnectors_daMWh, // "連系線"
-      total_daMWh, // "合計"
+      totalDemand_MWh, // "エリア需要"
+      nuclear_MWh, // "原子力"
+      allfossil_MWh, // "火力"
+      hydro_MWh, // "水力"
+      geothermal_MWh, // "地熱"
+      biomass_MWh, // "バイオマス"
+      solarOutput_MWh, // "太陽光（実績）"
+      solarThrottling_MWh, // "太陽光（出力制御量）"
+      windOutput_MWh, // "風力（実績）"
+      windThrottling_MWh, // "風力（出力制御量）"
+      pumpedStorage_MWh, // "揚水"
+      interconnectors_MWh, // "連系線"
     ] = row;
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
@@ -81,19 +142,18 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     return {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
-      totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
-      nuclearkWh: parseDpToKwh(nuclear_daMWh),
-      allfossilkWh: parseDpToKwh(allfossil_daMWh),
-      hydrokWh: parseDpToKwh(hydro_daMWh),
-      geothermalkWh: parseDpToKwh(geothermal_daMWh),
-      biomasskWh: parseDpToKwh(biomass_daMWh),
-      solarOutputkWh: parseDpToKwh(solarOutput_daMWh),
-      solarThrottlingkWh: parseDpToKwh(solarThrottling_daMWh),
-      windOutputkWh: parseDpToKwh(windOutput_daMWh),
-      windThrottlingkWh: parseDpToKwh(windThrottling_daMWh),
-      pumpedStoragekWh: parseDpToKwh(pumpedStorage_daMWh),
-      interconnectorskWh: parseDpToKwh(interconnectors_daMWh),
-      totalkWh: parseDpToKwh(total_daMWh),
+      totalDemandkWh: parseDpToKwh(totalDemand_MWh),
+      nuclearkWh: parseDpToKwh(nuclear_MWh),
+      allfossilkWh: parseDpToKwh(allfossil_MWh),
+      hydrokWh: parseDpToKwh(hydro_MWh),
+      geothermalkWh: parseDpToKwh(geothermal_MWh),
+      biomasskWh: parseDpToKwh(biomass_MWh),
+      solarOutputkWh: parseDpToKwh(solarOutput_MWh),
+      solarThrottlingkWh: parseDpToKwh(solarThrottling_MWh),
+      windOutputkWh: parseDpToKwh(windOutput_MWh),
+      windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
+      pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
+      interconnectorskWh: parseDpToKwh(interconnectors_MWh),
     };
   });
   return data;
@@ -162,23 +222,13 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   return data;
 };
 
-export const getTepcoAreaData = async (
+export const getChubuAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  console.log("TEPCO scraper running");
-  const oldCsvUrls = await getCSVUrlsFromPage(
-    OLD_CSV_URL,
-    RegExp(/.csv$/),
-    "https://www.tepco.co.jp"
-  );
-  const oldUrls = oldCsvUrls.map((url) => ({ url, format: "old" }));
+  const monthlyUrls = await getChubuCSVUrls();
 
-  const newCsvUrls = await getCSVUrlsFromPage(
-    NEW_CSV_URL,
-    RegExp(/.csv$/),
-    "https://www.tepco.co.jp"
-  );
-  const newUrls = newCsvUrls.map((url) => ({ url, format: "new" }));
+  const oldUrls = monthlyUrls.filter((u) => u.format === "old");
+  const newUrls = monthlyUrls.filter((u) => u.format === "new");
 
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
@@ -200,10 +250,17 @@ export const getTepcoAreaData = async (
               parser: parseOldCSV,
               ...OLD_CSV_FORMAT,
             }
-          : {
-              parser: parseNewCSV,
-              ...NEW_CSV_FORMAT,
-            };
+          : url.includes("zip")
+            ? {
+                parser: parseNewCSV,
+                ...NEW_CSV_FORMAT_ZIP,
+              }
+            : {
+                parser: parseNewCSV,
+                ...NEW_CSV_FORMAT,
+              };
+
+      console.log("downloading", url);
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
@@ -216,7 +273,7 @@ export const getTepcoAreaData = async (
         data.length / blocksInDay
       );
       return {
-        tso: JapanTsoName.TEPCO,
+        tso: JapanTsoName.CHUBU,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,

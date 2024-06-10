@@ -65,4 +65,8 @@ export enum GenerationSource {
 // Gets us to Watts, which is the lowest common denominator for power
 export const DECIMAL_PLACES = 3;
 
-export const SUPPORTED_TSOS = [JapanTsoName.TOHOKU, JapanTsoName.TEPCO];
+export const SUPPORTED_TSOS = [
+  JapanTsoName.TOHOKU,
+  JapanTsoName.TEPCO,
+  JapanTsoName.CHUBU,
+];
