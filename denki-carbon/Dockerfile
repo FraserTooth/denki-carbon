@@ -36,6 +36,6 @@ COPY --from=prerelease /usr/src/app/drizzle ./drizzle
 COPY --from=prerelease /usr/src/app/package.json .
 
 # run the app
-USER bun
+# USER bun
 EXPOSE 3000
 ENTRYPOINT [ "bun", "run", "start" ]
