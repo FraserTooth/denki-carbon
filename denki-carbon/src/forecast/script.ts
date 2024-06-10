@@ -9,7 +9,6 @@ import { exit } from "process";
 import { TrainingData } from "./types";
 import { mkdir } from "fs";
 import { getModelName } from "./utils";
-require("@tensorflow/tfjs-node");
 
 const benchmarkStart = DateTime.now();
 

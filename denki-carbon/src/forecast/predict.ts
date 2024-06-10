@@ -10,9 +10,8 @@ import { eq, and, between, desc } from "drizzle-orm";
 import { JapanTsoName } from "../const";
 import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { getFilesInFolder } from "./utils";
-import { LayersModel } from "@tensorflow/tfjs-layers";
-import { Rank, Tensor } from "@tensorflow/tfjs-core";
-require("@tensorflow/tfjs-node");
+import { LayersModel } from "@tensorflow/tfjs-node";
+import { Rank, Tensor } from "@tensorflow/tfjs-node";
 
 // The number of blocks used to predict the next set of blocks
 export const HISTORY_WINDOW_LENGTH = 32;

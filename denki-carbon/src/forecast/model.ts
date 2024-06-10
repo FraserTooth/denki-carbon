@@ -1,11 +1,10 @@
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "@tensorflow/tfjs-node";
 import { mkdir } from "fs";
 import { db } from "../db";
 import { carbonIntensityForecastModels } from "../schema";
 import { JapanTsoName } from "../const";
 import { DateTime } from "luxon";
 import { NormalisationFactors } from "./types";
-require("@tensorflow/tfjs-node");
 
 export const trainModel = async ({
   inputData,

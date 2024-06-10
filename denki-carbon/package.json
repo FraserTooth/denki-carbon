@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.0.5",
-    "@tensorflow/tfjs": "^4.20.0",
     "@tensorflow/tfjs-node": "^4.20.0",
     "commander": "^12.1.0",
     "csv-parse": "^5.5.6",
