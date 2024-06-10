@@ -27,7 +27,6 @@ export const getCSVUrlsFromPage = async (
   const csvUrls: string[] = [];
   const response = await fetch(pageUrl);
   const text = await response.text();
-  console.debug("text", text);
   const doc = new JSDOM(text).window.document;
   const links = doc.querySelectorAll("a");
   links.forEach((link: any) => {
@@ -73,6 +72,15 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         );
         console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid date or time");
+      }
+      // Not the only column that can be invalid, but would indicate a problem
+      if (!isFinite(row.totalDemandkWh)) {
+        console.error(
+          `Invalid in row #${rowIndex} in ${file.url}:`,
+          JSON.stringify(row)
+        );
+        console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
+        throw new Error("Invalid totalDemandkWh");
       }
       return {
         dataId: [file.tso, dateStringJST, timeFromStringJST].join("_"),

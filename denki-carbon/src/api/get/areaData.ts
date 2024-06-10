@@ -103,7 +103,8 @@ export const areaDataGetHandler = async (
     return finalRow;
   });
 
-  if (!query.includeForecast || query.includeForecast === "false") {
+  const includeForecast = query.includeForecast === "true";
+  if (!includeForecast) {
     return resultsWithIntensity;
   }
 

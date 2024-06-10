@@ -219,7 +219,10 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
-  return data;
+  // Remove NaN rows
+  const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
+  console.log("rowsSkipped", data.length - dataFiltered.length);
+  return dataFiltered;
 };
 
 export const getChubuAreaData = async (
