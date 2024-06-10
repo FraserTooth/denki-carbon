@@ -1,6 +1,6 @@
-# project-fish
+# Denki Carbon
 
-Apps using my new containerization method.
+The new version of Denki Carbon
 
 ### Quickstart
 
