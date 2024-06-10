@@ -32,6 +32,8 @@ COPY --from=prerelease /usr/src/app/src ./src
 COPY --from=prerelease /usr/src/app/drizzle ./drizzle
 COPY --from=prerelease /usr/src/app/package.json .
 
+RUN node yarn add google-protobuf
+
 # run the app
 USER bun
 EXPOSE 3000
