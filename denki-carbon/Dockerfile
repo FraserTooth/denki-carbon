@@ -35,5 +35,6 @@ COPY --from=prerelease /usr/src/app/package.json .
 # run the app
 USER bun
 EXPOSE 3000
+RUN bun migrate
 RUN bun seed
 ENTRYPOINT [ "bun", "run", "start" ]
