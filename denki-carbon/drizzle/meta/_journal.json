@@ -43,6 +43,13 @@
       "when": 1717590292202,
       "tag": "0005_tricky_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1718286887422,
+      "tag": "0006_nostalgic_morlun",
+      "breakpoints": true
     }
   ]
 }

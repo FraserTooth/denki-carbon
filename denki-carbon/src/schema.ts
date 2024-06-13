@@ -114,9 +114,7 @@ export const carbonIntensityForecasts = pgTable(
       withTimezone: true,
     }).notNull(),
     predictedCarbonIntensity: numeric("predicted_carbon_intensity").notNull(),
-    modelUsedId: integer("model_used_id")
-      .notNull()
-      .references(() => carbonIntensityForecastModels.id),
+    modelUsed: text("model_used").notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
     })

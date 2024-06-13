@@ -51,6 +51,35 @@ export const getLatestModel = async (tso: JapanTsoName) => {
   return { model, normalizationTensors, modelDetails: mostRecentModel };
 };
 
+/**
+ * Get the current main model for a given TSO
+ *
+ * @param tso
+ * @returns {Promise<{model: LayersModel, normalizationTensors: Record<string, Tensor<Rank>>}>}
+ */
+export const getMainModel = async (tso: JapanTsoName) => {
+  // Search files for models
+  const folderPath = "./src/forecast/models";
+  const tsoFolders = await getFilesInFolder(folderPath);
+  if (!tsoFolders) {
+    throw new Error("No tso models found in files");
+  }
+  const tsoModelFolders = tsoFolders.filter((file) => {
+    return file.includes(tso);
+  });
+  if (!tsoModelFolders || tsoModelFolders.length === 0) {
+    throw new Error(`Model for ${tso} not found in files`);
+  } else if (tsoModelFolders.length > 1) {
+    throw new Error(`Multiple models found for ${tso}`);
+  }
+
+  const { model, normalizationTensors } = await loadModelAndTensorsFromFile(
+    tsoModelFolders[0]
+  );
+  logger.info(`Using main model for ${tso}`);
+  return { model, normalizationTensors };
+};
+
 export const predictCarbonIntensity = async ({
   tso,
   model,
@@ -131,8 +160,7 @@ export const predictAndSaveCarbonIntensity = async (
   predictFrom: DateTime,
   tso: JapanTsoName
 ) => {
-  const { model, normalizationTensors, modelDetails } =
-    await getLatestModel(tso);
+  const { model, normalizationTensors } = await getMainModel(tso);
 
   const predictions = await predictCarbonIntensity({
     tso,
@@ -152,7 +180,7 @@ export const predictAndSaveCarbonIntensity = async (
         datetimeFrom: prediction.datetimeFrom.toJSDate(),
         datetimeTo: prediction.datetimeTo.toJSDate(),
         predictedCarbonIntensity: roundedIntensity.toString(),
-        modelUsedId: modelDetails.id,
+        modelUsed: model.name,
       };
     });
   const newRows = await db

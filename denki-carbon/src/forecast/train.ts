@@ -103,7 +103,7 @@ export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
     n_epochs: 5,
     learning_rate: 0.01,
     n_layers: 2,
-    callback: logger.info,
+    callback: console.debug,
   });
 
   const benchmarkEnd = DateTime.now();
@@ -114,8 +114,5 @@ export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
     model: trainingResult.model,
     normalizationTensors: trainingResult.normalize,
     folderpath: folderpath,
-    tso,
-    trainingDataFrom: startOfTrainingData,
-    trainingDataTo: endOfTrainingData,
   });
 };

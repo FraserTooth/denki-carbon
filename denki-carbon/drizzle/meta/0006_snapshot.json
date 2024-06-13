@@ -1,0 +1,383 @@
+{
+  "id": "c4f71de6-b3b2-4bb9-a469-ed965fb984aa",
+  "prevId": "af1641a8-4515-4706-8839-0be25b19ab77",
+  "version": "6",
+  "dialect": "postgresql",
+  "tables": {
+    "public.area_data_files": {
+      "name": "area_data_files",
+      "schema": "",
+      "columns": {
+        "fileKey": {
+          "name": "fileKey",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tso": {
+          "name": "tso",
+          "type": "tso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_datetime": {
+          "name": "from_datetime",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_datetime": {
+          "name": "to_datetime",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_rows": {
+          "name": "data_rows",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.area_data_processed": {
+      "name": "area_data_processed",
+      "schema": "",
+      "columns": {
+        "dataId": {
+          "name": "dataId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tso": {
+          "name": "tso",
+          "type": "tso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_jst": {
+          "name": "date_jst",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_from_jst": {
+          "name": "time_from_jst",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_to_jst": {
+          "name": "time_to_jst",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_from": {
+          "name": "datetime_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_to": {
+          "name": "datetime_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_demand_kwh": {
+          "name": "total_demand_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nuclear_kwh": {
+          "name": "nuclear_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "all_fossil_kwh": {
+          "name": "all_fossil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng_kwh": {
+          "name": "lng_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "coal_kwh": {
+          "name": "coal_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oil_kwh": {
+          "name": "oil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_fossil_kwh": {
+          "name": "other_fossil_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hydro_kwh": {
+          "name": "hydro_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geothermal_kwh": {
+          "name": "geothermal_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biomass_kwh": {
+          "name": "biomass_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_output_kwh": {
+          "name": "solar_output_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_throttling_kwh": {
+          "name": "solar_throttling_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wind_output_kwh": {
+          "name": "wind_output_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wind_throttling_kwh": {
+          "name": "wind_throttling_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pumped_storage_kwh": {
+          "name": "pumped_storage_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "battery_storage_kwh": {
+          "name": "battery_storage_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interconnectors_kwh": {
+          "name": "interconnectors_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_kwh": {
+          "name": "other_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_kwh": {
+          "name": "total_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.carbon_intensity_forecast_models": {
+      "name": "carbon_intensity_forecast_models",
+      "schema": "",
+      "columns": {
+        "model_id": {
+          "name": "model_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tso": {
+          "name": "tso",
+          "type": "tso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "training_data_from": {
+          "name": "training_data_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "training_data_to": {
+          "name": "training_data_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_name": {
+          "name": "model_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "normalisation_factors": {
+          "name": "normalisation_factors",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.carbon_intensity_forecasts": {
+      "name": "carbon_intensity_forecasts",
+      "schema": "",
+      "columns": {
+        "forecast_id": {
+          "name": "forecast_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tso": {
+          "name": "tso",
+          "type": "tso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_utc": {
+          "name": "datetime_utc",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_to": {
+          "name": "datetime_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "predicted_carbon_intensity": {
+          "name": "predicted_carbon_intensity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_used": {
+          "name": "model_used",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "tso_idx": {
+          "name": "tso_idx",
+          "columns": [
+            "tso"
+          ],
+          "isUnique": false
+        },
+        "datetime_from_idx": {
+          "name": "datetime_from_idx",
+          "columns": [
+            "datetime_utc"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "public.tso": {
+      "name": "tso",
+      "schema": "public",
+      "values": [
+        "hepco",
+        "tohoku",
+        "tepco",
+        "chubu",
+        "hokuden",
+        "kepco",
+        "chugoku",
+        "yonden",
+        "kyuden",
+        "okinawa"
+      ]
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

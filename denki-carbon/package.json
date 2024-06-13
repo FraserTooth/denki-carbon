@@ -18,10 +18,10 @@
     "up:debug": "docker-compose up  --force-recreate --build",
     "down": "docker-compose down",
     "scrape": "bun run ./src/scrapers/cli.ts",
-    "seed": "bun run scrape --tso all --scrape all",
+    "seed": "bun run scrape --tso all --scrape all --predict",
     "cron": "bun run scrape --tso all --scrape latest --predict",
     "train": "bun run ./src/forecast/cli.ts",
-    "setup": "bun seed && bun train --tso all && bun cron",
+    "setup": "bun seed",
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {

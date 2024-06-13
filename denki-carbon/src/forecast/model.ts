@@ -1,9 +1,5 @@
 import * as tf from "@tensorflow/tfjs-node";
 import { mkdir } from "fs";
-import { db } from "../db";
-import { carbonIntensityForecastModels } from "../schema";
-import { JapanTsoName } from "../const";
-import { DateTime } from "luxon";
 import { NormalisationFactors } from "./types";
 import { logger } from "../utils";
 
@@ -202,23 +198,17 @@ export const saveModel = async ({
   model,
   normalizationTensors,
   folderpath,
-  tso,
-  trainingDataFrom,
-  trainingDataTo,
 }: {
   model: tf.Sequential;
   normalizationTensors: Record<string, tf.Tensor>;
   folderpath: string;
-  tso: JapanTsoName;
-  trainingDataFrom: DateTime;
-  trainingDataTo: DateTime;
 }) => {
   // Get the model name
   const modelName = model.name;
   const modelFolder = `${folderpath}/${modelName}`;
 
   // Make folder if it doesn't exist
-  mkdir(modelFolder, { recursive: true }, logger.error);
+  mkdir(modelFolder, { recursive: true }, console.error);
 
   // Save model
   await model.save(`file://${modelFolder}`);
@@ -232,14 +222,6 @@ export const saveModel = async ({
   };
   const tensorArrayJson = JSON.stringify(normalisationFactors);
   await Bun.write(`${modelFolder}/normalization.json`, tensorArrayJson);
-  const insertModel: typeof carbonIntensityForecastModels.$inferInsert = {
-    tso,
-    trainingDataFrom: trainingDataFrom.toJSDate(),
-    trainingDataTo: trainingDataTo.toJSDate(),
-    modelName,
-    normalisationFactors: normalisationFactors,
-  };
-  await db.insert(carbonIntensityForecastModels).values(insertModel).execute();
 };
 
 export const loadModelAndTensorsFromFile = async (filepath: string) => {
