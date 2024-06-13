@@ -178,8 +178,6 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
 export const getTohokuAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  console.log("TOHOKU scraper running");
-
   const oldCsvUrls = await getCSVUrlsFromPage(
     CSV_URL,
     // e.g. common/demand/juyo_2023_tohoku_1Q.csv
@@ -230,7 +228,7 @@ export const getTohokuAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.log(
+      console.debug(
         "url:",
         url,
         "rows:",

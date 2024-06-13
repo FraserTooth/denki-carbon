@@ -1,9 +1,7 @@
 import { exit } from "process";
 import { JapanTsoName, SUPPORTED_TSOS } from "../const";
-import { ScrapeType, runScraper } from "./index";
+import { ScrapeType, scrapeJob } from "./index";
 import { program, Option } from "commander";
-import { DateTime } from "luxon";
-import { makePredictionFromMostRecentData } from "../forecast/predict";
 
 program.exitOverride((err) => {
   console.debug(err.code);
@@ -40,35 +38,8 @@ program
     }) => {
       const { tso, scrape: scrapeType, predict } = options;
       const tsoToScrape = tso === "all" ? SUPPORTED_TSOS : [tso];
-      console.log(`Running scraper for ${tso}...`);
-      const statsArray: Partial<{
-        newRows: number;
-        tso: JapanTsoName;
-        latestDatetimeSaved: DateTime;
-        newForecastRows: number;
-      }>[] = [];
-
-      for (const tso of tsoToScrape) {
-        console.log(`Running scraper for ${tso}...`);
-        const stats = await runScraper(tso, scrapeType);
-        statsArray.push(stats);
-      }
-
-      console.log("\n---- Scraper finished ----");
-      statsArray.forEach((stats) => {
-        console.log(
-          `${stats.tso} - new rows: ${stats.newRows}, latest datetime: ${stats.latestDatetimeSaved?.toFormat("yyyy-MM-dd HH:mm")}`
-        );
-      });
-
-      if (predict) {
-        console.log("\n---- Making predictions ----");
-        for (const tso of tsoToScrape) {
-          const newForecastRows = await makePredictionFromMostRecentData(tso);
-          console.log(`${tso} - new forecast rows: ${newForecastRows.length}`);
-        }
-      }
-
+      console.log(`Running scraper from CLI for ${tso}...`);
+      await scrapeJob(tsoToScrape, scrapeType, predict);
       exit(0);
     }
   );

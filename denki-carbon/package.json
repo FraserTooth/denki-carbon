@@ -25,6 +25,7 @@
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {
+    "@elysiajs/cron": "^1.0.3",
     "@elysiajs/swagger": "^1.0.5",
     "@tensorflow/tfjs-node": "^4.20.0",
     "commander": "^12.1.0",

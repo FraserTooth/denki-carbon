@@ -221,7 +221,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   });
   // Remove NaN rows
   const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
-  console.log("rowsSkipped", data.length - dataFiltered.length);
+  console.debug("rowsSkipped", data.length - dataFiltered.length);
   return dataFiltered;
 };
 
@@ -263,11 +263,11 @@ export const getChubuAreaData = async (
                 ...NEW_CSV_FORMAT,
               };
 
-      console.log("downloading", url);
+      console.debug("downloading", url);
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.log(
+      console.debug(
         "url:",
         url,
         "rows:",

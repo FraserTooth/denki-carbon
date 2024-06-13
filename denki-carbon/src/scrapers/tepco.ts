@@ -165,7 +165,6 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
 export const getTepcoAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  console.log("TEPCO scraper running");
   const oldCsvUrls = await getCSVUrlsFromPage(
     OLD_CSV_URL,
     RegExp(/.csv$/),
@@ -207,7 +206,7 @@ export const getTepcoAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.log(
+      console.debug(
         "url:",
         url,
         "rows:",

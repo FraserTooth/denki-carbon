@@ -9,6 +9,7 @@ import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { DateTime } from "luxon";
 import { getChubuAreaData } from "./chubu";
+import { makePredictionFromMostRecentData } from "../forecast/predict";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -114,7 +115,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
     }
   );
 
-  console.log(
+  console.debug(
     `Attempting insert of ${insertValues.length} rows for ${file.url}`
   );
   let insertedRowsCount = 0;
@@ -127,10 +128,10 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       .onConflictDoNothing();
     insertedRowsCount += response.rowCount ?? 0;
   }
-  console.log(`Inserted ${insertedRowsCount} rows for ${file.url}`);
+  console.debug(`Inserted ${insertedRowsCount} rows for ${file.url}`);
 
   // Save the new file URLs
-  console.log("Recording file", file.url);
+  console.debug("Recording file", file.url);
   const fileDateStringJST = file.fromDatetime.setZone("Asia/Tokyo").toISODate();
   const scrapedFilesInsert: typeof areaDataFiles.$inferInsert = {
     fileKey: `${file.tso}_${fileDateStringJST}`,
@@ -158,7 +159,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   };
 };
 
-export const runScraper = async (
+export const scrapeTso = async (
   utility: JapanTsoName,
   scrapeType: ScrapeType
 ) => {
@@ -191,4 +192,38 @@ export const runScraper = async (
     newRows: newRowsTotal,
     latestDatetimeSaved: latestDatetimeSavedOfAllFiles,
   };
+};
+
+export const scrapeJob = async (
+  tsoToScrape: JapanTsoName[],
+  scrapeType: ScrapeType,
+  shouldPredict: boolean
+) => {
+  const statsArray: Partial<{
+    newRows: number;
+    tso: JapanTsoName;
+    latestDatetimeSaved: DateTime;
+    newForecastRows: number;
+  }>[] = [];
+
+  for (const tso of tsoToScrape) {
+    console.log(`Running scraper for ${tso}...`);
+    const stats = await scrapeTso(tso, scrapeType);
+    statsArray.push(stats);
+  }
+
+  console.log("\n---- Scraper finished ----");
+  statsArray.forEach((stats) => {
+    console.log(
+      `${stats.tso} - new rows: ${stats.newRows}, latest datetime: ${stats.latestDatetimeSaved?.toFormat("yyyy-MM-dd HH:mm")}`
+    );
+  });
+
+  if (shouldPredict) {
+    console.log("\n---- Making predictions ----");
+    for (const tso of tsoToScrape) {
+      const newForecastRows = await makePredictionFromMostRecentData(tso);
+      console.log(`${tso} - new forecast rows: ${newForecastRows.length}`);
+    }
+  }
 };
