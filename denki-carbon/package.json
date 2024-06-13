@@ -25,6 +25,7 @@
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {
+    "@bogeychan/elysia-logger": "^0.0.22",
     "@elysiajs/cron": "^1.0.3",
     "@elysiajs/swagger": "^1.0.5",
     "@tensorflow/tfjs-node": "^4.20.0",
@@ -37,6 +38,7 @@
     "jsdom": "^24.1.0",
     "luxon": "^3.4.4",
     "pg": "^8.11.5",
+    "pino": "^9.2.0",
     "yauzl-promise": "^4.0.0"
   },
   "devDependencies": {
@@ -47,6 +49,7 @@
     "@types/yauzl-promise": "^4.0.1",
     "bun-types": "latest",
     "drizzle-kit": "^0.21.4",
+    "pino-pretty": "^11.2.1",
     "prettier": "^3.3.0"
   },
   "module": "src/index.js"

@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { JapanTsoName } from "../const";
+import { logger } from "../utils";
 
 export const getBlockInDay = (datetime: Date): number => {
   return datetime.getHours() * 2 + Math.floor(datetime.getMinutes() / 30);
@@ -16,7 +17,7 @@ export async function getFilesInFolder(directoryPath: string) {
     const filePaths = fileNames.map((fn) => join(directoryPath, fn));
     return filePaths;
   } catch (err) {
-    console.error(err); // depending on your application, this `catch` block (as-is) may be inappropriate; consider instead, either not-catching and/or re-throwing a new Error with the previous err attached.
+    logger.error(err); // depending on your application, this `catch` block (as-is) may be inappropriate; consider instead, either not-catching and/or re-throwing a new Error with the previous err attached.
   }
 }
 

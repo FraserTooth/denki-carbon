@@ -12,6 +12,7 @@ import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { getFilesInFolder } from "./utils";
 import { LayersModel } from "@tensorflow/tfjs-node";
 import { Rank, Tensor } from "@tensorflow/tfjs-node";
+import { logger } from "../utils";
 
 // The number of blocks used to predict the next set of blocks
 export const HISTORY_WINDOW_LENGTH = 32;
@@ -46,7 +47,7 @@ export const getLatestModel = async (tso: JapanTsoName) => {
   const { model, normalizationTensors } = await loadModelAndTensorsFromFile(
     mostRecentModelFilepath
   );
-  console.log("Using model", mostRecentModel.modelName);
+  logger.info(`Using model ${mostRecentModel.modelName}`);
   return { model, normalizationTensors, modelDetails: mostRecentModel };
 };
 

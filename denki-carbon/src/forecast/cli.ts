@@ -2,9 +2,10 @@ import { exit } from "process";
 import { JapanTsoName, SUPPORTED_TSOS } from "../const";
 import { program, Option } from "commander";
 import { trainCarbonIntensityModel } from "./train";
+import { logger } from "../utils";
 
 program.exitOverride((err) => {
-  console.debug(err.code);
+  logger.debug(err.code);
   if (err.code === "commander.missingMandatoryOptionValue") {
     program.outputHelp();
   }
@@ -22,14 +23,14 @@ program
   .action(async (options: { tso: JapanTsoName | "all" }) => {
     const { tso } = options;
     const tsoToScrape = tso === "all" ? SUPPORTED_TSOS : [tso];
-    console.log(`Running scraper for ${tso}...`);
+    logger.info(`Running scraper for ${tso}...`);
 
     for (const tso of tsoToScrape) {
-      console.log(`Training model for ${tso}...`);
+      logger.info(`Training model for ${tso}...`);
       await trainCarbonIntensityModel(tso);
     }
 
-    console.log("\n---- Training finished ----");
+    logger.info("---- Training finished ----");
 
     exit(0);
   });

@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
+import { logger } from "../utils";
 
 const CSV_URL = "https://setsuden.nw.tohoku-epco.co.jp/download.html";
 
@@ -209,7 +210,7 @@ export const getTohokuAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  console.debug("urlsToDownload", urlsToDownload);
+  logger.debug("urlsToDownload", urlsToDownload);
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -228,7 +229,7 @@ export const getTohokuAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.debug(
+      logger.debug(
         "url:",
         url,
         "rows:",

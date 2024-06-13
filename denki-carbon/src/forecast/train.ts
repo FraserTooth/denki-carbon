@@ -7,6 +7,7 @@ import { JapanTsoName } from "../const";
 import { getTotalCarbonIntensityForAreaDataRow } from "../carbon";
 import { TrainingData } from "./types";
 import { getModelName } from "./utils";
+import { logger } from "../utils";
 
 export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
   const benchmarkStart = DateTime.now();
@@ -73,8 +74,8 @@ export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
     });
   }
 
-  console.log("trainingDataSnippet", trainingData[0]);
-  console.log("trainingDataLength", trainingData.length);
+  logger.info("trainingDataSnippet", trainingData[0]);
+  logger.info("trainingDataLength", trainingData.length);
 
   /**
    * Train model
@@ -102,11 +103,11 @@ export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
     n_epochs: 5,
     learning_rate: 0.01,
     n_layers: 2,
-    callback: console.log,
+    callback: logger.info,
   });
 
   const benchmarkEnd = DateTime.now();
-  console.log("timeTaken", benchmarkEnd.diff(benchmarkStart).toISO());
+  logger.info("timeTaken", benchmarkEnd.diff(benchmarkStart).toISO());
 
   const folderpath = `./temp/models/`;
   await saveModel({

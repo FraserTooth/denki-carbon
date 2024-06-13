@@ -10,6 +10,7 @@ import iconv from "iconv-lite";
 import { DateTime } from "luxon";
 import { getChubuAreaData } from "./chubu";
 import { makePredictionFromMostRecentData } from "../forecast/predict";
+import { logger } from "../utils";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -67,20 +68,20 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         .toFormat("HH:mm");
       const timeToStringJST = row.toUTC.setZone("Asia/Tokyo").toFormat("HH:mm");
       if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
-        console.error(
+        logger.error(
           `Invalid row #${rowIndex} in ${file.url}:`,
           JSON.stringify(row)
         );
-        console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
+        logger.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid date or time");
       }
       // Not the only column that can be invalid, but would indicate a problem
       if (!isFinite(row.totalDemandkWh)) {
-        console.error(
+        logger.error(
           `Invalid in row #${rowIndex} in ${file.url}:`,
           JSON.stringify(row)
         );
-        console.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
+        logger.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid totalDemandkWh");
       }
       return {
@@ -115,12 +116,12 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
     }
   );
 
-  console.debug(
+  logger.debug(
     `Attempting insert of ${insertValues.length} rows for ${file.url}`
   );
   let insertedRowsCount = 0;
   for (let i = 0; i < insertValues.length; i += 900) {
-    console.debug("Inserting rows", i, "to", i + 900);
+    logger.debug("Inserting rows", i, "to", i + 900);
     const insertBatch = insertValues.slice(i, i + 900);
     const response = await db
       .insert(areaDataProcessed)
@@ -128,10 +129,10 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       .onConflictDoNothing();
     insertedRowsCount += response.rowCount ?? 0;
   }
-  console.debug(`Inserted ${insertedRowsCount} rows for ${file.url}`);
+  logger.debug(`Inserted ${insertedRowsCount} rows for ${file.url}`);
 
   // Save the new file URLs
-  console.debug("Recording file", file.url);
+  logger.debug("Recording file", file.url);
   const fileDateStringJST = file.fromDatetime.setZone("Asia/Tokyo").toISODate();
   const scrapedFilesInsert: typeof areaDataFiles.$inferInsert = {
     fileKey: `${file.tso}_${fileDateStringJST}`,
@@ -207,23 +208,23 @@ export const scrapeJob = async (
   }>[] = [];
 
   for (const tso of tsoToScrape) {
-    console.log(`Running scraper for ${tso}...`);
+    logger.info(`---- Running scraper for ${tso} ----`);
     const stats = await scrapeTso(tso, scrapeType);
     statsArray.push(stats);
   }
 
-  console.log("\n---- Scraper finished ----");
+  logger.info("---- Scraper finished ----");
   statsArray.forEach((stats) => {
-    console.log(
+    logger.info(
       `${stats.tso} - new rows: ${stats.newRows}, latest datetime: ${stats.latestDatetimeSaved?.toFormat("yyyy-MM-dd HH:mm")}`
     );
   });
 
   if (shouldPredict) {
-    console.log("\n---- Making predictions ----");
+    logger.info("---- Making predictions ----");
     for (const tso of tsoToScrape) {
       const newForecastRows = await makePredictionFromMostRecentData(tso);
-      console.log(`${tso} - new forecast rows: ${newForecastRows.length}`);
+      logger.info(`${tso} - new forecast rows: ${newForecastRows.length}`);
     }
   }
 };

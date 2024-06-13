@@ -2,9 +2,10 @@ import { exit } from "process";
 import { JapanTsoName, SUPPORTED_TSOS } from "../const";
 import { ScrapeType, scrapeJob } from "./index";
 import { program, Option } from "commander";
+import { logger } from "../utils";
 
 program.exitOverride((err) => {
-  console.debug(err.code);
+  logger.debug(err.code);
   if (err.code === "commander.missingMandatoryOptionValue") {
     program.outputHelp();
   }
@@ -38,7 +39,7 @@ program
     }) => {
       const { tso, scrape: scrapeType, predict } = options;
       const tsoToScrape = tso === "all" ? SUPPORTED_TSOS : [tso];
-      console.log(`Running scraper from CLI for ${tso}...`);
+      logger.info(`Running scraper from CLI for ${tso}...`);
       await scrapeJob(tsoToScrape, scrapeType, predict);
       exit(0);
     }

@@ -5,6 +5,7 @@ import { carbonIntensityForecastModels } from "../schema";
 import { JapanTsoName } from "../const";
 import { DateTime } from "luxon";
 import { NormalisationFactors } from "./types";
+import { logger } from "../utils";
 
 export const trainModel = async ({
   inputData,
@@ -58,14 +59,14 @@ export const trainModel = async ({
     inputData[0].length,
     inputData[0][0].length,
   ]);
-  console.log("inputTensor", inputTensor.shape);
+  logger.debug("inputTensor", inputTensor.shape);
   const labelTensor = tf.tensor2d(labelData, [
     labelData.length,
     labelData[0].length,
   ]);
 
   const [xs, inputMax, inputMin] = normalizeTensorFit(inputTensor);
-  console.log("xs", xs.shape);
+  logger.debug("xs", xs.shape);
   const [ys, labelMax, labelMin] = normalizeTensorFit(labelTensor);
 
   // ## define model
@@ -108,7 +109,7 @@ export const trainModel = async ({
     loss: "meanSquaredError",
   });
 
-  console.log("model", model.summary());
+  logger.debug("model", model.summary());
 
   // ## fit model
 
@@ -217,7 +218,7 @@ export const saveModel = async ({
   const modelFolder = `${folderpath}/${modelName}`;
 
   // Make folder if it doesn't exist
-  mkdir(modelFolder, { recursive: true }, console.error);
+  mkdir(modelFolder, { recursive: true }, logger.error);
 
   // Save model
   await model.save(`file://${modelFolder}`);

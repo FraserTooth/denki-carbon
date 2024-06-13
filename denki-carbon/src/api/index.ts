@@ -4,6 +4,8 @@ import { areaDataGetHandler, areaDataGetValidator } from "./get/areaData";
 import cron from "@elysiajs/cron";
 import { ScrapeType, scrapeJob } from "../scrapers";
 import { SUPPORTED_TSOS } from "../const";
+import { logger as elysiaLogger } from "@bogeychan/elysia-logger";
+import { logger } from "../utils";
 
 const app = new Elysia({ normalize: true })
   .use(
@@ -11,12 +13,13 @@ const app = new Elysia({ normalize: true })
       path: "/docs",
     })
   )
+  .use(elysiaLogger())
   .use(
     cron({
       name: "getLatestDataAndForecast",
       pattern: "1,31 * * * *",
       async run() {
-        console.log("Running cron job to get latest data and forecast...");
+        logger.info("Running cron job to get latest data and forecast...");
         await scrapeJob(SUPPORTED_TSOS, ScrapeType.Latest, true);
       },
     })
@@ -29,6 +32,6 @@ const app = new Elysia({ normalize: true })
 
   .listen(3000);
 
-console.log(
+logger.info(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );

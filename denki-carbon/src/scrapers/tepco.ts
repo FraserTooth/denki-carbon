@@ -4,6 +4,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType, getCSVUrlsFromPage } from ".";
+import { logger } from "../utils";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
 
@@ -188,7 +189,7 @@ export const getTepcoAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  console.debug("urlsToDownload", urlsToDownload);
+  logger.debug("urlsToDownload", urlsToDownload);
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -206,7 +207,7 @@ export const getTepcoAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.debug(
+      logger.debug(
         "url:",
         url,
         "rows:",

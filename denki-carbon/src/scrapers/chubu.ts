@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType } from ".";
 import * as yauzlp from "yauzl-promise";
+import { logger } from "../utils";
 
 const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
 
@@ -221,7 +222,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   });
   // Remove NaN rows
   const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
-  console.debug("rowsSkipped", data.length - dataFiltered.length);
+  logger.debug("rowsSkipped", data.length - dataFiltered.length);
   return dataFiltered;
 };
 
@@ -242,7 +243,7 @@ export const getChubuAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  console.debug("urlsToDownload", urlsToDownload);
+  logger.debug("urlsToDownload", urlsToDownload);
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -263,11 +264,11 @@ export const getChubuAreaData = async (
                 ...NEW_CSV_FORMAT,
               };
 
-      console.debug("downloading", url);
+      logger.debug("downloading", url);
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      console.debug(
+      logger.debug(
         "url:",
         url,
         "rows:",
