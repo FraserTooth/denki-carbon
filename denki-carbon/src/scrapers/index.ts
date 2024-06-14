@@ -10,7 +10,7 @@ import iconv from "iconv-lite";
 import { DateTime } from "luxon";
 import { getChubuAreaData } from "./chubu";
 import { makePredictionFromMostRecentData } from "../forecast/predict";
-import { logger } from "../utils";
+import { logger, conflictUpdateAllExcept } from "../utils";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -126,7 +126,10 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
     const response = await db
       .insert(areaDataProcessed)
       .values(insertBatch)
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: areaDataProcessed.dataId,
+        set: conflictUpdateAllExcept(areaDataProcessed, ["dataId"]),
+      });
     insertedRowsCount += response.rowCount ?? 0;
   }
   logger.debug(`Inserted ${insertedRowsCount} rows for ${file.url}`);
