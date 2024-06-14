@@ -11,7 +11,7 @@ const transport = pino.transport({
   },
 });
 
-const config = process.env.NODE_ENV === "production" ? undefined : transport;
+const config = process.env.ENVIRONMENT === "local" ? transport : undefined;
 export const logger = pino(config);
 
 export const conflictUpdateAllExcept = <
