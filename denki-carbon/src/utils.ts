@@ -3,15 +3,16 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { getTableColumns } from "drizzle-orm/utils";
 import pino from "pino";
 
-const transport = pino.transport({
-  target: "pino-pretty",
-  options: {
-    colorize: true,
-    ignore: "pid,hostname",
-  },
-});
+const transport = () =>
+  pino.transport({
+    target: "pino-pretty",
+    options: {
+      colorize: true,
+      ignore: "pid,hostname",
+    },
+  });
 
-const config = process.env.ENVIRONMENT === "local" ? transport : undefined;
+const config = process.env.ENVIRONMENT === "local" ? transport() : undefined;
 export const logger = pino(config);
 
 export const conflictUpdateAllExcept = <
