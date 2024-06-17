@@ -4,7 +4,7 @@
   "scripts": {
     "test": "bun test",
     "dev": "bun run --watch src/api/index.ts",
-    "start": "bun migrate && bun run src/api/index.ts && bun seed",
+    "start": "bun migrate && bun run src/api/index.ts",
     "build": "bun build ./src/api/index.ts --outdir ./build --target bun",
     "generate": "bun --env-file=.env.local drizzle-kit generate",
     "drop": "bun --env-file=.env.local drizzle-kit drop",
