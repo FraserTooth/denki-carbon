@@ -179,8 +179,8 @@ export const areaDataGetHandler = async (
         {
           tso: forecast.tso,
           dateJST: datetimeFrom.toISODate(),
-          timeFromJST: datetimeFrom.toFormat("HH:mm:ss"),
-          timeToJST: datetimeTo.toFormat("HH:mm:ss"),
+          timeFromJST: datetimeFrom.setZone("Asia/Tokyo").toFormat("HH:mm:ss"),
+          timeToJST: datetimeTo.setZone("Asia/Tokyo").toFormat("HH:mm:ss"),
           datetimeFrom: forecast.datetimeFrom,
           datetimeTo: forecast.datetimeTo,
           predictedCarbonIntensity: strToNum(forecast.predictedCarbonIntensity),
