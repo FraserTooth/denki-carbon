@@ -219,7 +219,7 @@ export const scrapeJob = async (
   logger.info("---- Scraper finished ----");
   statsArray.forEach((stats) => {
     logger.info(
-      `${stats.tso} - new rows: ${stats.newRows}, latest datetime: ${stats.latestDatetimeSaved?.toFormat("yyyy-MM-dd HH:mm")}`
+      `${stats.tso} - new rows: ${stats.newRows}, latest datetime JST: ${stats.latestDatetimeSaved?.setZone("Asia/Tokyo").toFormat("yyyy-MM-dd HH:mm")}`
     );
   });
 
