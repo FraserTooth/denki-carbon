@@ -22,7 +22,7 @@ const utilityGeocoordinates = {
     latitude: 35.033333,
     longitude: 126.716667,
   },
-  tohokuden: {
+  tohoku: {
     latitude: 38.269167,
     longitude: 140.870556,
   },

@@ -2,19 +2,19 @@ const apiURL = process.env.REACT_APP_API_URL;
 console.log("API URL: ", apiURL);
 
 export const supportedUtilities = [
+  // "hepco",
+  "tohoku",
   "tepco",
-  "kepco",
-  "tohokuden",
   "chuden",
-  "hepco",
-  "rikuden",
-  "cepco",
-  "yonden",
-  "kyuden",
-  "okiden",
+  // "cepco",
+  // "rikuden",
+  // "kepco",
+  // "yonden",
+  // "kyuden",
+  // "okiden",
 ] as const;
 
-export type Utilities = typeof supportedUtilities[number];
+export type Utilities = (typeof supportedUtilities)[number];
 
 export interface DailyCarbonData {
   hour: number;
