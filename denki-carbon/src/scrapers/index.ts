@@ -10,7 +10,8 @@ import iconv from "iconv-lite";
 import { DateTime } from "luxon";
 import { getChubuAreaData } from "./chubu";
 import { makePredictionFromMostRecentData } from "../forecast/predict";
-import { logger, conflictUpdateAllExcept } from "../utils";
+import { logger, conflictUpdateAllExcept, axiosInstance } from "../utils";
+import * as yauzlp from "yauzl-promise";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -27,8 +28,10 @@ export const getCSVUrlsFromPage = async (
   baseUrl: string
 ) => {
   const csvUrls: string[] = [];
-  const response = await fetch(pageUrl);
-  const text = await response.text();
+  const response = await axiosInstance.get(pageUrl, {
+    responseType: "text",
+  });
+  const text = await response.data;
   const doc = new JSDOM(text).window.document;
   const links = doc.querySelectorAll("a");
   links.forEach((link: any) => {
@@ -41,10 +44,43 @@ export const getCSVUrlsFromPage = async (
 };
 
 export const downloadCSV = async (url: string, encoding: string) => {
-  const response = await fetch(url);
-  const dataResponse = await response.arrayBuffer();
-  const buffer = Buffer.from(dataResponse);
-  const decoded = iconv.decode(buffer, encoding);
+  const response = await axiosInstance.get(url, {
+    responseType: "arraybuffer",
+  });
+  const dataResponse = await response.data;
+
+  const decoded = await (async () => {
+    if (url.includes("csv")) {
+      const buffer = Buffer.from(dataResponse);
+      return iconv.decode(buffer, encoding);
+    } else if (url.includes("zip")) {
+      const zipBuffer = Buffer.from(dataResponse);
+      const buffer = await (async () => {
+        const zip = await yauzlp.fromBuffer(zipBuffer);
+        const chunks: Uint8Array[] = [];
+        try {
+          for await (const entry of zip) {
+            if (entry.filename.endsWith("/")) {
+              // Directory, we can ignore
+              continue;
+            } else {
+              // We currently just assume the ZIP file only contains one CSV file
+              const readStream = await entry.openReadStream();
+              for await (const chunk of readStream) {
+                chunks.push(chunk);
+              }
+            }
+          }
+        } finally {
+          await zip.close();
+          return Buffer.concat(chunks);
+        }
+      })();
+      return iconv.decode(buffer, encoding);
+    } else {
+      throw new Error(`Unsupported file type: ${url}`);
+    }
+  })();
 
   const records: string[][] = parse(decoded, {
     relax_column_count: true,

@@ -1,10 +1,7 @@
-import { parse } from "csv-parse/sync";
-import iconv from "iconv-lite";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType } from ".";
-import * as yauzlp from "yauzl-promise";
+import { ScrapeType, downloadCSV } from ".";
 import { axiosInstance, logger } from "../utils";
 
 const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
@@ -54,52 +51,6 @@ const getChubuCSVUrls = async (): Promise<
     return { url, format };
   });
   return urls;
-};
-
-const downloadCSV = async (url: string, encoding: string) => {
-  const response = await axiosInstance.get(url, {
-    responseType: "arraybuffer",
-  });
-  const dataResponse = await response.data;
-
-  const decoded = await (async () => {
-    if (url.includes("csv")) {
-      const buffer = Buffer.from(dataResponse);
-      return iconv.decode(buffer, encoding);
-    } else if (url.includes("zip")) {
-      const zipBuffer = Buffer.from(dataResponse);
-      const buffer = await (async () => {
-        const zip = await yauzlp.fromBuffer(zipBuffer);
-        const chunks: Uint8Array[] = [];
-        try {
-          for await (const entry of zip) {
-            if (entry.filename.endsWith("/")) {
-              // Directory, we can ignore
-              continue;
-            } else {
-              // We currently just assume the ZIP file only contains one CSV file
-              const readStream = await entry.openReadStream();
-              for await (const chunk of readStream) {
-                chunks.push(chunk);
-              }
-            }
-          }
-        } finally {
-          await zip.close();
-          return Buffer.concat(chunks);
-        }
-      })();
-      return iconv.decode(buffer, encoding);
-    } else {
-      throw new Error(`Unsupported file type: ${url}`);
-    }
-  })();
-
-  const records: string[][] = parse(decoded, {
-    relax_column_count: true,
-    skip_empty_lines: true,
-  });
-  return records;
 };
 
 const parseDpToKwh = (raw: string): number => {

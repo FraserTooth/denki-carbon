@@ -1,9 +1,7 @@
-import { parse } from "csv-parse/sync";
-import iconv from "iconv-lite";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, getCSVUrlsFromPage } from ".";
+import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { logger } from "../utils";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
@@ -22,19 +20,6 @@ const NEW_CSV_FORMAT = {
   encoding: "utf-8",
   headerRows: 2,
   intervalMinutes: 30,
-};
-
-const downloadCSV = async (url: string, encoding: string) => {
-  const response = await fetch(url);
-  const dataResponse = await response.arrayBuffer();
-  const buffer = Buffer.from(dataResponse);
-  const decoded = iconv.decode(buffer, encoding);
-
-  const records: string[][] = parse(decoded, {
-    relax_column_count: true,
-    skip_empty_lines: true,
-  });
-  return records;
 };
 
 const parseDpToKwh = (raw: string): number => {
@@ -189,7 +174,7 @@ export const getTepcoAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  logger.debug("urlsToDownload", urlsToDownload);
+  logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -207,14 +192,11 @@ export const getTepcoAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      logger.debug(
-        "url:",
-        url,
-        "rows:",
-        data.length,
-        "days:",
-        data.length / blocksInDay
-      );
+      logger.debug({
+        url: url,
+        rows: data.length,
+        days: data.length / blocksInDay,
+      });
       return {
         tso: JapanTsoName.TEPCO,
         url,

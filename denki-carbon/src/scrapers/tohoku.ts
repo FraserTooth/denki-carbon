@@ -210,7 +210,7 @@ export const getTohokuAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  logger.debug("urlsToDownload", urlsToDownload);
+  logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -229,14 +229,11 @@ export const getTohokuAreaData = async (
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      logger.debug(
-        "url:",
-        url,
-        "rows:",
-        data.length,
-        "days:",
-        data.length / blocksInDay
-      );
+      logger.debug({
+        url: url,
+        rows: data.length,
+        days: data.length / blocksInDay,
+      });
       return {
         tso: JapanTsoName.TOHOKU,
         url,
