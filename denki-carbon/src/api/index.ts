@@ -35,7 +35,3 @@ const app = new Elysia({ normalize: true })
 logger.info(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
-
-// Seed the database with the latest data if required
-logger.info("Seeding database with latest data...");
-await scrapeJob(SUPPORTED_TSOS, ScrapeType.All, true);
