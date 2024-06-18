@@ -60,6 +60,31 @@ const defaultCarbonIntensityForecast: CarbonIntensityForecast[] = [
   },
 ];
 
+export interface DenkiCarbonV2QueryParams {
+  tso: string;
+  from: string;
+  to: string;
+  includeForecast: boolean;
+}
+export interface DenkiCarbonV2 {
+  tso: string;
+  datetimeFrom: string;
+  datetimeTo: string;
+  carbonIntensity?: number;
+  averagePredictedCarbonIntensity?: number;
+  predictedCarbonIntensity?: number;
+}
+const defaultDenkiCarbonV2: DenkiCarbonV2[] = [
+  {
+    tso: "tepco",
+    datetimeFrom: "2020-01-01T15:00:00.000Z",
+    datetimeTo: "2020-01-01T15:30:00.000Z",
+    carbonIntensity: 1,
+    averagePredictedCarbonIntensity: 1,
+    predictedCarbonIntensity: 1,
+  },
+];
+
 /**
  * Generate Cache for Local Browser to prevent API overuse
  *
@@ -197,6 +222,64 @@ const retriveForecast = createAPIInterface<CarbonIntensityForecast[], string>(
 );
 
 /**
+ * Create API Interface
+ *
+ * @param endpointPath endpoint path, don't put '/' on the ends
+ * @param defaultData the default data for useState
+ * @param unpacker basic function to unpack the data down to the main array
+ *
+ * @returns API calling interface
+ */
+function createAPIV2Interface<DataType, Params>(
+  defaultData: DataType,
+  unpacker: (raw: any) => DataType = (raw) => raw,
+  endpointPath: string
+) {
+  // Cache in closure
+  // const cache = createCache<DataType>();
+
+  // Return Function
+  const callAPI = async (
+    setData: (data: DataType) => void,
+    utility: Utilities,
+    params: Params
+  ): Promise<void> => {
+    setData(defaultData);
+
+    // const cacheData = cache.getCache(utility);
+    // if (cacheData) {
+    //   console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
+    //   return setData(cacheData);
+    // }
+
+    const requestURL =
+      `${apiURL}/${endpointPath}?` +
+      new URLSearchParams(params as Record<string, string>);
+    const response = await fetch(requestURL);
+
+    if (response.ok === false) {
+      console.error("API Call Failed Retrying...");
+      console.error(response);
+      // setTimeout(() => callAPI(setData, utility, params), 2000);
+      return;
+    }
+
+    const result: DataType = await response.json();
+
+    const data: DataType = unpacker(result);
+
+    // cache.setCache(utility, data);
+    setData(data);
+  };
+  return callAPI;
+}
+
+const retriveDataDenkiCarbonV2 = createAPIV2Interface<
+  DenkiCarbonV2[],
+  DenkiCarbonV2QueryParams
+>(defaultDenkiCarbonV2, (raw) => raw, "v1/area_data");
+
+/**
  * Uses JS's date object to check whether both dates are on the same day
  *
  * @param first JS Date object
@@ -238,5 +321,9 @@ export default {
     default: defaultCarbonIntensityForecast,
     retrive: retriveForecast,
     findTodaysData,
+  },
+  denkiCarbonV2: {
+    default: defaultDenkiCarbonV2,
+    retrive: retriveDataDenkiCarbonV2,
   },
 };
