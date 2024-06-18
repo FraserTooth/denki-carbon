@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 const apiURL = process.env.REACT_APP_API_URL;
 console.log("API URL: ", apiURL);
 
@@ -5,7 +7,7 @@ export const supportedUtilities = [
   // "hepco",
   "tohoku",
   "tepco",
-  "chuden",
+  "chubu",
   // "cepco",
   // "rikuden",
   // "kepco",
@@ -68,8 +70,8 @@ export interface DenkiCarbonV2QueryParams {
 }
 export interface DenkiCarbonV2 {
   tso: string;
-  datetimeFrom: string;
-  datetimeTo: string;
+  datetimeFrom: DateTime;
+  datetimeTo: DateTime;
   carbonIntensity?: number;
   averagePredictedCarbonIntensity?: number;
   predictedCarbonIntensity?: number;
@@ -77,8 +79,8 @@ export interface DenkiCarbonV2 {
 const defaultDenkiCarbonV2: DenkiCarbonV2[] = [
   {
     tso: "tepco",
-    datetimeFrom: "2020-01-01T15:00:00.000Z",
-    datetimeTo: "2020-01-01T15:30:00.000Z",
+    datetimeFrom: DateTime.fromISO("2020-01-01T15:00:00.000Z"),
+    datetimeTo: DateTime.fromISO("2020-01-01T15:30:00.000Z"),
     carbonIntensity: 1,
     averagePredictedCarbonIntensity: 1,
     predictedCarbonIntensity: 1,
@@ -277,7 +279,17 @@ function createAPIV2Interface<DataType, Params>(
 const retriveDataDenkiCarbonV2 = createAPIV2Interface<
   DenkiCarbonV2[],
   DenkiCarbonV2QueryParams
->(defaultDenkiCarbonV2, (raw) => raw, "v1/area_data");
+>(
+  defaultDenkiCarbonV2,
+  (raw: Record<string, string>[]): DenkiCarbonV2[] => {
+    return raw.map((raw) => ({
+      ...raw,
+      datetimeFrom: DateTime.fromISO(raw.datetimeFrom),
+      datetimeTo: DateTime.fromISO(raw.datetimeTo),
+    })) as DenkiCarbonV2[]; // Trust me bro
+  },
+  "v1/area_data"
+);
 
 /**
  * Uses JS's date object to check whether both dates are on the same day

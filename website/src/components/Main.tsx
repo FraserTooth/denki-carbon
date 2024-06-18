@@ -4,7 +4,6 @@ import Explanation from "./Explanation";
 import Title from "./Title";
 import Social from "./Social";
 import intensity, { supportedUtilities } from "./api/denkicarbon";
-import moment from "moment";
 import { DateTime } from "luxon";
 
 import {
@@ -29,7 +28,9 @@ const startOfLatestHalfHour = now.startOf("hour").set({
 });
 const nowJST = now.setZone("Asia/Tokyo");
 const startOfDayJST = nowJST.startOf("day");
-const startOfTomorrowJST = startOfDayJST.plus({ days: 1 });
+const lastBlockOfDayJST = startOfDayJST
+  .plus({ days: 1 })
+  .minus({ minutes: 30 });
 
 export default function Main() {
   const date = new Date();
@@ -46,7 +47,7 @@ export default function Main() {
     intensity.denkiCarbonV2.retrive(setCarbonIntensityData, utility, {
       tso: utility,
       from: startOfDayJST.toISO() ?? "",
-      to: startOfTomorrowJST.toISO() ?? "",
+      to: lastBlockOfDayJST.toISO() ?? "",
       includeForecast: true,
     });
   }, [utility]);
@@ -81,10 +82,7 @@ export default function Main() {
 
   const rawCarbonIntensityNow =
     carbonIntensityData.find((dp) => {
-      return (
-        DateTime.fromISO(dp.datetimeFrom).valueOf() ===
-        startOfLatestHalfHour.valueOf()
-      );
+      return dp.datetimeFrom.valueOf() === startOfLatestHalfHour.valueOf();
     })?.predictedCarbonIntensity ?? 0;
   console.log(
     `The current Carbon Intensity is ${rawCarbonIntensityNow}gC02/kWh`
@@ -117,10 +115,7 @@ export default function Main() {
             <Typography style={{ display: "inline-block" }}>
               gCO₂/kWh
             </Typography>
-            {/* <Graph
-              monthData={dailyCarbonByMonth ?? null}
-              forecastData={todaysForecastData ?? null}
-            /> */}
+            <Graph intensityData={carbonIntensityData} />
           </div>
         )}
         <Social carbonIntensity={displayCarbonIntensityNow} utility={utility} />

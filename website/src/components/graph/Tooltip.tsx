@@ -3,11 +3,11 @@ import React from "react";
 import { Card, Typography, Box, makeStyles } from "@material-ui/core";
 
 import { useTranslation } from "react-i18next";
+import { DateTime } from "luxon";
 
-export const timeFormatter = (tick: number) => {
-  if (tick === 24) return "00:00";
-  if (tick < 10) return `0${tick}:00`;
-  return `${tick}:00`;
+export const timeFormatter = (iso: string) => {
+  const datetime = DateTime.fromISO(iso ?? "");
+  return datetime.toFormat("HH:mm");
 };
 
 const useStyles = makeStyles({
@@ -57,7 +57,7 @@ export default function CustomTooltip({ payload, label, active }: any) {
     };
 
     const lines = payload
-      .filter((line: any) => ["average", "forecast"].includes(line.dataKey))
+      .filter((line: any) => ["intensity", "forecast"].includes(line.dataKey))
       .map((line: any, index: number) => {
         return dataBit(
           dp[line.dataKey],
@@ -71,7 +71,7 @@ export default function CustomTooltip({ payload, label, active }: any) {
       <Card className={classes.tooltip}>
         <Box style={{ paddingLeft: "5px", paddingRight: "5px" }}>
           <Typography className={classes.time}>
-            {timeFormatter(dp.hour)}
+            {timeFormatter(dp.from)}
           </Typography>
           {lines}
         </Box>

@@ -26,7 +26,7 @@ const utilityGeocoordinates = {
     latitude: 38.269167,
     longitude: 140.870556,
   },
-  chuden: {
+  chubu: {
     latitude: 35.183333,
     longitude: 136.9,
   },
