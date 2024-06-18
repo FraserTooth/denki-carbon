@@ -52,34 +52,6 @@ export default function Main() {
     });
   }, [utility]);
 
-  // // Monthly Data
-  // const [dailyCarbonByMonth, setDailyCarbonByMonth] = useState(
-  //   intensity.byMonth.default
-  // );
-  // useEffect(() => {
-  //   intensity.byMonth.retrive(setDailyCarbonByMonth, utility);
-  // }, [utility]);
-
-  // // Forecast
-  // const [intensityForecast, setIntensityForecast] = useState(
-  //   intensity.forecast.default
-  // );
-  // useEffect(() => {
-  //   intensity.forecast.retrive(
-  //     setIntensityForecast,
-  //     utility,
-  //     todayString,
-  //     todayString
-  //   );
-  // }, [utility]);
-
-  // const todaysForecastData =
-  //   intensity.forecast.findTodaysData(intensityForecast);
-
-  // Set Big Number
-  // const carbonIntensity =
-  //   Math.round(todaysForecastData[hourIndex]?.forecast_value) || 0;
-
   const rawCarbonIntensityNow =
     carbonIntensityData.find((dp) => {
       return dp.datetimeFrom.valueOf() === startOfLatestHalfHour.valueOf();
