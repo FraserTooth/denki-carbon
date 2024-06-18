@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType } from ".";
 import * as yauzlp from "yauzl-promise";
-import { logger } from "../utils";
+import { axiosInstance, logger } from "../utils";
 
 const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
 
@@ -25,7 +25,7 @@ const NEW_CSV_FORMAT_ZIP = {
 
 const NEW_CSV_FORMAT = {
   blocksInDay: 48,
-  encoding: "utf-8",
+  encoding: "Shift_JIS",
   headerRows: 2,
   intervalMinutes: 30,
 };
@@ -39,9 +39,9 @@ const getChubuCSVUrls = async (): Promise<
     format: "old" | "new";
   }[]
 > => {
-  const response = await fetch(CSV_URL);
+  const response = await axiosInstance.get(CSV_URL);
 
-  const data = (await response.json()) as { category: string; path: string }[];
+  const data = (await response.data) as { category: string; path: string }[];
   const areaData = data.filter(
     (d) =>
       d.category === "年別エリア需給実績" ||
@@ -57,8 +57,10 @@ const getChubuCSVUrls = async (): Promise<
 };
 
 const downloadCSV = async (url: string, encoding: string) => {
-  const response = await fetch(url);
-  const dataResponse = await response.arrayBuffer();
+  const response = await axiosInstance.get(url, {
+    responseType: "arraybuffer",
+  });
+  const dataResponse = await response.data;
 
   const decoded = await (async () => {
     if (url.includes("csv")) {
@@ -222,17 +224,17 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   });
   // Remove NaN rows
   const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
-  logger.debug("rowsSkipped", data.length - dataFiltered.length);
+  logger.debug({ rowsSkipped: data.length - dataFiltered.length });
   return dataFiltered;
 };
 
 export const getChubuAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  const monthlyUrls = await getChubuCSVUrls();
+  const allUrls = await getChubuCSVUrls();
 
-  const oldUrls = monthlyUrls.filter((u) => u.format === "old");
-  const newUrls = monthlyUrls.filter((u) => u.format === "new");
+  const oldUrls = allUrls.filter((u) => u.format === "old");
+  const newUrls = allUrls.filter((u) => u.format === "new");
 
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
@@ -243,7 +245,7 @@ export const getChubuAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  logger.debug("urlsToDownload", urlsToDownload);
+  logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -264,18 +266,15 @@ export const getChubuAreaData = async (
                 ...NEW_CSV_FORMAT,
               };
 
-      logger.debug("downloading", url);
+      logger.debug({ downloading: url });
 
       const csv = await downloadCSV(url, encoding);
       const data = parser(csv);
-      logger.debug(
-        "url:",
-        url,
-        "rows:",
-        data.length,
-        "days:",
-        data.length / blocksInDay
-      );
+      logger.debug({
+        url: url,
+        rows: data.length,
+        days: data.length / blocksInDay,
+      });
       return {
         tso: JapanTsoName.CHUBU,
         url,

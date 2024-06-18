@@ -29,6 +29,8 @@
     "@elysiajs/cron": "^1.0.3",
     "@elysiajs/swagger": "^1.0.5",
     "@tensorflow/tfjs-node": "^4.20.0",
+    "axios": "^1.7.2",
+    "axios-retry": "^4.4.0",
     "commander": "^12.1.0",
     "csv-parse": "^5.5.6",
     "drizzle-orm": "^0.30.10",

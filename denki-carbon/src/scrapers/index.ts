@@ -121,7 +121,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   );
   let insertedRowsCount = 0;
   for (let i = 0; i < insertValues.length; i += 900) {
-    logger.debug("Inserting rows", i, "to", i + 900);
+    logger.debug(`Inserting rows ${i} to ${i + 900}`);
     const insertBatch = insertValues.slice(i, i + 900);
     const response = await db
       .insert(areaDataProcessed)
@@ -135,7 +135,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   logger.debug(`Inserted ${insertedRowsCount} rows for ${file.url}`);
 
   // Save the new file URLs
-  logger.debug("Recording file", file.url);
+  logger.debug(`Recording file: ${file.url}`);
   const fileDateStringJST = file.fromDatetime.setZone("Asia/Tokyo").toISODate();
   const scrapedFilesInsert: typeof areaDataFiles.$inferInsert = {
     fileKey: `${file.tso}_${fileDateStringJST}`,
@@ -212,8 +212,13 @@ export const scrapeJob = async (
 
   for (const tso of tsoToScrape) {
     logger.info(`---- Running scraper for ${tso} ----`);
-    const stats = await scrapeTso(tso, scrapeType);
-    statsArray.push(stats);
+    try {
+      const stats = await scrapeTso(tso, scrapeType);
+      statsArray.push(stats);
+    } catch (e) {
+      const error = e as Error;
+      logger.error(`Error scraping ${tso}: ${error.message}`);
+    }
   }
 
   logger.info("---- Scraper finished ----");
