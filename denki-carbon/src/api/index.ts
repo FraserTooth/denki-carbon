@@ -6,6 +6,7 @@ import { ScrapeType, scrapeJob } from "../scrapers";
 import { SUPPORTED_TSOS } from "../const";
 import { logger as elysiaLogger } from "@bogeychan/elysia-logger";
 import { logger } from "../utils";
+import cors from "@elysiajs/cors";
 
 const app = new Elysia({ normalize: true })
   .use(
@@ -13,6 +14,7 @@ const app = new Elysia({ normalize: true })
       path: "/docs",
     })
   )
+  .use(cors())
   .use(elysiaLogger())
   .use(
     cron({
