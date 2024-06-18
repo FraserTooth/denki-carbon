@@ -1,0 +1,90 @@
+{
+  "theCarbonIs": "今現在 <utilityMenu></utilityMenu> の発電所から排出されているCO₂の量は(推定値):",
+  "months": [
+    "1月",
+    "2月",
+    "3月",
+    "4月",
+    "5月",
+    "6月",
+    "7月",
+    "8月",
+    "9月",
+    "10月",
+    "11月",
+    "12月"
+  ],
+  "weekdays": [
+    "月曜日",
+    "火曜日",
+    "水曜日",
+    "木曜日",
+    "金曜日",
+    "土曜日",
+    "日曜日"
+  ],
+  "utilities": {
+    "tepco": "東京電力",
+    "kepco": "関西電力",
+    "tohokuden": "東北電力",
+    "chuden": "中部電力",
+    "hepco": "北海道電力",
+    "rikuden": "北陸電力",
+    "cepco": "中国電力/Energia",
+    "yonden": "四国電力",
+    "kyuden": "九州電力",
+    "okiden": "沖縄電力"
+  },
+  "location": {
+    "utilityMenu": "(現在地)"
+  },
+  "social": {
+    "hashtags": ["renewableenergy", "climateaction", "netzero"],
+    "twitter": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
+    "facebook": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
+    "linkedin": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh"
+  },
+  "graph": {
+    "average": "平均",
+    "compare": "比較月",
+    "forecast": "今日の予報",
+    "averageLine": "平均",
+    "forecastLine": "予報",
+    "compareLine": "比較月",
+    "targetLine": "2030までの目標",
+    "averageUKLine": "イギリスの2020平均"
+  },
+  "carbonGraphTitle": "今日の炭素強度予報と<monthMenu></monthMenu>の過去4年の平均",
+  "explanation": {
+    "probablySection": {
+      "title": "推定値？",
+      "paragraph": [
+        "はい、表示しているのは推定値であり、決して正確ではありません。",
+        "グリッドオペレーターのウェブサイトから過去のデータを入手し、そこから現在のデータから炭素強度を推定しています。",
+        "現在、日本では発電元別のエネルギー市場のライブデータが入手できないからです。",
+        "このプロジェクトが発展していく中で、精度を改善していきたいと考えていますが、それよりも、この数値が推定ではなく事実となるように、日本のエネルギー事業者が必要なデータをリアルタイムで公開してくれることを期待しています。"
+      ]
+    },
+    "howSection": {
+      "title": "炭素強度をどう割り出しているか？",
+      "paragraph": [
+        "炭素強度は、各燃料タイプから発生するエネルギー生成の割合に燃料タイプごとの炭素強度係数を乗算ことにより、特定の期間について計算されます。",
+        "例えば、石炭の炭素強度係数は937 gCO₂/kWh、複合サイクルガスタービン（CCGT）は394 gCO₂/kWhです。",
+        "これらは完璧ではありません。各発電プラントの炭素強度係数は、年間を通じて変化する可能性が高いためです。",
+        "さらに厄介なのは、電力会社が提供するこのデータは、「火力発電」という1つの見出しの下ですべて考慮しているため、その期間にどのような燃料が燃やされていたのかが分かりません。",
+        "現在、私たちは他のレポートや情報源を使用して、各燃料源の平均的な寄与度を算出しています。",
+        "これが完全ではないことは承知していますが、日本の電力会社がどのような燃料をどの時間にどのように燃やしているのか、また炭素回収などの補助技術をどのように利用しているのかについて、もっと透明性を高めてほしいと思います。"
+      ],
+      "carbonIntensityLink": "現在、CRIEPI「電力中央研究所」の<carbonLink>研究報告</carbonLink>から炭素強度係数を算出しています。"
+    },
+    "useSection": {
+      "title": "データを使ってはいいですか?",
+      "docsLink": "もちろん! APIの説明書はここだ： <docsLink>リンク</docsLink>."
+    },
+    "helpSection": {
+      "title": "手伝いましょうか？",
+      "repoLink": "プログラマーだったら、GitHubを見にきてください。 ‐ <apiLink>API Repository</apiLink> 及び <webLink>Website Repository</webLink>.  それに、私たちの<slackLink>Slack Community</slackLink>参加してください！",
+      "sponsor": "このプロジェクトのスポンサーにご興味のある方は<contactLink>こちら</contactLink>からご連絡ください。"
+    }
+  }
+}

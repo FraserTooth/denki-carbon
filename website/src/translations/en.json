@@ -1,0 +1,90 @@
+{
+  "theCarbonIs": "The CO₂ emitted from Electricity Generation supplied by <utilityMenu></utilityMenu> right now is (probably):",
+  "months": [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ],
+  "weekdays": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "utilities": {
+    "tepco": "TEPCO",
+    "kepco": "KEPCO",
+    "tohokuden": "Tohokuden",
+    "chuden": "Chuden",
+    "hepco": "HEPCO",
+    "rikuden": "Hokuden/Rikuden",
+    "cepco": "CEPCO/Energia",
+    "yonden": "Yonden",
+    "kyuden": "Kyuden",
+    "okiden": "Okiden"
+  },
+  "location": {
+    "utilityMenu": "(Use Location)"
+  },
+  "social": {
+    "hashtags": ["renewableenergy", "climateaction", "netzero", "japan"],
+    "twitter": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
+    "facebook": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
+    "linkedin": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh"
+  },
+  "graph": {
+    "average": "Average",
+    "compare": "Compared Month",
+    "forecast": "Today's Forecast",
+    "averageLine": "Average",
+    "forecastLine": "Forecast",
+    "compareLine": "Compared Month",
+    "targetLine": "2030 Target",
+    "averageUKLine": "UK Average 2020"
+  },
+  "carbonGraphTitle": "Today's Carbon Intensity Forecast, compared with 4-year average data for <monthMenu></monthMenu>",
+  "explanation": {
+    "probablySection": {
+      "title": "Probably?",
+      "paragraph": [
+        "Yes, this measurement is by no means accurate, this is because the data that feeds this value is not live.",
+        "It comes from the Grid Operator Website as historical data, from which we extrapolate to the present and calculate a corresponding Carbon Intensity.",
+        "Since live energy market data, by generation source, is not currently available in Japan, we have to make these predictions.",
+        "As this project develops, we hope to improve our predictions, but more than this, we hope that Japanese energy utilties will make available the required data in real time so that this number is not a prediction, but fact."
+      ]
+    },
+    "howSection": {
+      "title": "How is the Carbon Intensity Calculated?",
+      "paragraph": [
+        "The carbon intensity is calculated for a given period by figuring out the proportion of energy generation that came from each fuel type.",
+        "This proportion is then multiplied by the Carbon Intensity for that fuel type, for example, the carbon intensity factor for coal is 937 gCO₂/kWh with Combined Cycle Gas Turbines (CCGT) having a factor of 394 gCO₂/kWh.",
+        "This isn't perfect, as each generating plant is likely to have a different carbon intensity factor, which changes over the course of the year.",
+        "Even more troublesome, the data used by this tool - which is provided by Japanese utility companies - considers all Fossil Fuels under one heading 'Thermal Generation', so with the data, we cannot tell what kinds of fuel were being burned during that period.",
+        "Currently, we use other reporting and sources to try and figure out the average contribution of each fuel source.",
+        "We realise this is not perfect and wish that the Japanese utilties would be more transparent about the kinds of fuel they are burning at what times, and what supplementary technologies they are using, such as carbon capture."
+      ],
+      "carbonIntensityLink": "Currently we draw our Carbon Intensity factors from this <carbonLink>research paper</carbonLink> from CRIEPI (Central Research Institute of Electric Power Industry)."
+    },
+    "useSection": {
+      "title": "Can I get access to the data?",
+      "docsLink": "Of Course! Check out out the API documentation at our <docsLink>Documentation Website</docsLink>."
+    },
+    "helpSection": {
+      "title": "How can I help?",
+      "repoLink": "You can contribute technically through Github at our <apiLink>API Repository</apiLink> or <webLink>Website Repository</webLink>. Also, do join our <slackLink>Slack Community</slackLink> and join the discussion!",
+      "sponsor": "If you are interested in sponsoring this project, please <contactLink>Get In Touch</contactLink>"
+    }
+  }
+}
