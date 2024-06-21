@@ -46,6 +46,7 @@
   },
   "graph": {
     "average": "Average",
+    "intensity": "Carbon Intensity",
     "compare": "Compared Month",
     "forecast": "Today's Forecast",
     "averageLine": "Average",

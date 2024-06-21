@@ -46,6 +46,7 @@
   },
   "graph": {
     "average": "平均",
+    "intensity": "炭素強度",
     "compare": "比較月",
     "forecast": "今日の予報",
     "averageLine": "平均",
