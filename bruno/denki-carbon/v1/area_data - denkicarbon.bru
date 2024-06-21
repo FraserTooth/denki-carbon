@@ -1,0 +1,18 @@
+meta {
+  name: area_data - denkicarbon
+  type: http
+  seq: 3
+}
+
+get {
+  url: https://api.denkicarbon.jp/v1/area_data?tso=tepco&from=2024-06-17T15:00:00Z&to=2024-06-20T15:00:00Z&includeForecast=true
+  body: none
+  auth: none
+}
+
+query {
+  tso: tepco
+  from: 2024-06-17T15:00:00Z
+  to: 2024-06-20T15:00:00Z
+  includeForecast: true
+}
