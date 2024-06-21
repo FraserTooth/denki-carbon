@@ -320,7 +320,7 @@ const findTodaysData = (forecastData: CarbonIntensityForecast[]) => {
   });
 };
 
-export default {
+export const denkiCarbon = {
   average: {
     default: defaultDailyCarbon,
     retrive: retriveDailyIntensity,
@@ -339,3 +339,4 @@ export default {
     retrive: retriveDataDenkiCarbonV2,
   },
 };
+export default denkiCarbon;

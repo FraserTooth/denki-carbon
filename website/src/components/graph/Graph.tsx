@@ -9,11 +9,7 @@ import {
   Legend,
 } from "recharts";
 
-import {
-  CarbonIntensityForecast,
-  DailyCarbonDataByMonth,
-  DenkiCarbonV2,
-} from "../api/denkicarbon";
+import { DenkiCarbonV2 } from "../api/denkicarbon";
 
 import { CircularProgress, Card, makeStyles } from "@material-ui/core";
 

@@ -33,9 +33,6 @@ const lastBlockOfDayJST = startOfDayJST
   .minus({ minutes: 30 });
 
 export default function Main() {
-  const date = new Date();
-  const hourIndex = date.getHours();
-
   // Utility Choice
   const [utility, setUtility] = useState(supportedUtilities[0]);
 

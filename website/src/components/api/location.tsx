@@ -127,7 +127,8 @@ const fetchUtilityBasedOnUsersGeolocation = (
   }
 };
 
-export default {
+export const location = {
   fetchUtilityBasedOnGeolocation: fetchUtilityBasedOnUsersGeolocation,
   utilityGeocoordinates,
 };
+export default location;
