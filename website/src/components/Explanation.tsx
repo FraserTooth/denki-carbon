@@ -86,11 +86,8 @@ export default function Explanation() {
           <Trans
             i18nKey="explanation.helpSection.repoLink"
             components={{
-              apiLink: transLink(
-                "https://github.com/FraserTooth/japan_grid_carbon_api"
-              ),
-              webLink: transLink(
-                "https://github.com/FraserTooth/japan_grid_carbon_api_website"
+              githubLink: transLink(
+                "https://github.com/FraserTooth/denki-carbon"
               ),
               slackLink: transLink(
                 "https://join.slack.com/t/denkicarbon/shared_invite/zt-n2eme5ee-cKagN29wusOmXOgNP81g_w"
