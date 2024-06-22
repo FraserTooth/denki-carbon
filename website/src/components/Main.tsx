@@ -27,10 +27,11 @@ const startOfLatestHalfHour = now.startOf("hour").set({
   minute: now.minute >= 30 ? 30 : 0,
 });
 const nowJST = now.setZone("Asia/Tokyo");
-const startOfDayJST = nowJST.startOf("day");
-const lastBlockOfDayJST = startOfDayJST
-  .plus({ days: 1 })
-  .minus({ minutes: 30 });
+
+// Most utilities have a 2hr lag, and we predict the next 3 hrs, so get from 2 hrs into the future
+const predictionLimit = nowJST.plus({ hours: 2 });
+
+const oneDayAgo = nowJST.minus({ days: 1 });
 
 export default function Main() {
   // Utility Choice
@@ -43,8 +44,8 @@ export default function Main() {
   useEffect(() => {
     intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
       tso: utility,
-      from: startOfDayJST.toISO() ?? "",
-      to: lastBlockOfDayJST.toISO() ?? "",
+      from: oneDayAgo.toISO() ?? "",
+      to: predictionLimit.toISO() ?? "",
       includeForecast: true,
     });
   }, [utility]);
