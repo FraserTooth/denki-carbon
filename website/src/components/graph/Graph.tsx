@@ -23,7 +23,7 @@ import useWindowDimensions from "./resize";
 import CustomTooltip, { timeFormatter } from "./Tooltip";
 
 import { Trans, useTranslation } from "react-i18next";
-import { DateTime, Interval } from "luxon";
+import { DateTime } from "luxon";
 
 const useStyles = makeStyles({
   graphCard: {
