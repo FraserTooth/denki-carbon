@@ -55,8 +55,6 @@ const createCache = <StoredDataType>() => {
 
   const cache: Cache = {};
 
-  // const cache = {};
-
   /**
    * Get Cache Data for Utility
    *

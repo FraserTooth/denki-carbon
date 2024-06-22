@@ -55,7 +55,7 @@
     "targetLine": "2030までの目標",
     "averageUKLine": "イギリスの2020平均"
   },
-  "carbonGraphTitle": "今日の炭素強度予報と<monthMenu></monthMenu>の過去4年の平均",
+  "carbonGraphTitle": "今日の炭素強度と予報",
   "explanation": {
     "probablySection": {
       "title": "推定値？",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   LineChart,
   Line,
@@ -11,13 +11,18 @@ import {
 
 import { DenkiCarbonGetAreaData } from "../api/denkicarbon";
 
-import { CircularProgress, Card, makeStyles } from "@material-ui/core";
+import {
+  CircularProgress,
+  Card,
+  makeStyles,
+  Typography,
+} from "@material-ui/core";
 
 import Title from "./Title";
 import useWindowDimensions from "./resize";
 import CustomTooltip, { timeFormatter } from "./Tooltip";
 
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 const useStyles = makeStyles({
   graphCard: {
@@ -36,11 +41,6 @@ interface GraphProps {
 export default function Graph(props: GraphProps) {
   const classes = useStyles();
   const { t } = useTranslation();
-
-  const now = new Date();
-  const month = now.getMonth();
-
-  const [monthChoice, setMonthChoice] = useState(month);
 
   const { width } = useWindowDimensions();
   const graphWidth = width > 700 ? 500 : width - 100;
@@ -177,7 +177,9 @@ export default function Graph(props: GraphProps) {
 
   return (
     <Card className={classes.graphCard}>
-      <Title setMonthChoice={setMonthChoice} monthChoice={monthChoice} />
+      <Typography variant="h6" align="center">
+        <Trans i18nKey="carbonGraphTitle" />
+      </Typography>
       <br />
       {renderLineChart}
     </Card>

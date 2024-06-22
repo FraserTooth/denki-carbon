@@ -55,7 +55,7 @@
     "targetLine": "2030 Target",
     "averageUKLine": "UK Average 2020"
   },
-  "carbonGraphTitle": "Today's Carbon Intensity Forecast, compared with 4-year average data for <monthMenu></monthMenu>",
+  "carbonGraphTitle": "Today's Carbon Intensity with Forecast",
   "explanation": {
     "probablySection": {
       "title": "Probably?",
