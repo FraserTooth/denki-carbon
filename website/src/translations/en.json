@@ -72,9 +72,8 @@
         "The carbon intensity is calculated for a given period by figuring out the proportion of energy generation that came from each fuel type.",
         "This proportion is then multiplied by the Carbon Intensity for that fuel type, for example, the carbon intensity factor for coal is 937 gCO₂/kWh with Combined Cycle Gas Turbines (CCGT) having a factor of 394 gCO₂/kWh.",
         "This isn't perfect, as each generating plant is likely to have a different carbon intensity factor, which changes over the course of the year.",
-        "Even more troublesome, the data used by this tool - which is provided by Japanese utility companies - considers all Fossil Fuels under one heading 'Thermal Generation', so with the data, we cannot tell what kinds of fuel were being burned during that period.",
-        "Currently, we use other reporting and sources to try and figure out the average contribution of each fuel source.",
-        "We realise this is not perfect and wish that the Japanese utilties would be more transparent about the kinds of fuel they are burning at what times, and what supplementary technologies they are using, such as carbon capture."
+        "Additionaly, before February 2024, the data used by this tool - which is provided by Japanese utility companies - considers all Fossil Fuels under one heading 'Thermal Generation', so with the data, we couldn't tell what kinds of fuel were being burned during that period.",
+        "This make calculating a good carbon intensity figure before then even more challenging, as we have to use other reporting and sources to try and figure out the average contribution of each fuel source."
       ],
       "carbonIntensityLink": "Currently we draw our Carbon Intensity factors from this <carbonLink>research paper</carbonLink> from CRIEPI (Central Research Institute of Electric Power Industry)."
     },
