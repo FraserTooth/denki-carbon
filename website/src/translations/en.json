@@ -1,5 +1,5 @@
 {
-  "theCarbonIs": "The CO₂ emitted from Electricity Generation supplied by <utilityMenu></utilityMenu> right now is (probably):",
+  "theCarbonIs": "The CO₂ emitted from Electricity Generation supplied by <utilityMenu></utilityMenu> right now is forecasted as:",
   "months": [
     "January",
     "February",
@@ -57,12 +57,12 @@
   },
   "carbonGraphTitle": "Today's Carbon Intensity with Forecast",
   "explanation": {
-    "probablySection": {
-      "title": "Probably?",
+    "forecastSection": {
+      "title": "Why do you need a forecast?",
       "paragraph": [
-        "Yes, this measurement is by no means accurate, this is because the data that feeds this value is not live.",
-        "It comes from the Grid Operator Website as historical data, from which we extrapolate to the present and calculate a corresponding Carbon Intensity.",
-        "Since live energy market data, by generation source, is not currently available in Japan, we have to make these predictions.",
+        "The value given for carbon intensity on the grid right now is a forecast mainly because the data sources we use are not real time.",
+        "It comes from the Grid Operator Website as historical data, which lag real time by about 2 hours, depending on the utility, from this data we then make a prediction around 3 hours into the future.",
+        "Generation plans, and real time energy system data, by generation source, is not publicly available in Japan, so we as a 3rd party have to make a reasonable prediction.",
         "As this project develops, we hope to improve our predictions, but more than this, we hope that Japanese energy utilties will make available the required data in real time so that this number is not a prediction, but fact."
       ]
     },
