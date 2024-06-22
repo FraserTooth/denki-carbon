@@ -70,9 +70,7 @@ export default function Explanation() {
           <Trans
             i18nKey="explanation.useSection.docsLink"
             components={{
-              docsLink: transLink(
-                "https://app.swaggerhub.com/apis/FraserTooth/DenkiCarbon/1"
-              ),
+              docsLink: transLink("https://api.denkicarbon.jp/docs"),
             }}
           />
         </Typography>
