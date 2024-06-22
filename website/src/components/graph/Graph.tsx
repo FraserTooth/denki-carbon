@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import {
   LineChart,
   Line,
@@ -7,6 +7,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  Dot,
 } from "recharts";
 
 import { DenkiCarbonGetAreaData } from "../api/denkicarbon";
@@ -22,6 +23,7 @@ import useWindowDimensions from "./resize";
 import CustomTooltip, { timeFormatter } from "./Tooltip";
 
 import { Trans, useTranslation } from "react-i18next";
+import { DateTime, Interval } from "luxon";
 
 const useStyles = makeStyles({
   graphCard: {
@@ -43,6 +45,11 @@ export default function Graph(props: GraphProps) {
 
   const { width } = useWindowDimensions();
   const graphWidth = width > 700 ? 500 : width - 100;
+
+  const nowJST = DateTime.now().setZone("Asia/Tokyo");
+  const startOfLatestHalfHour = nowJST.startOf("hour").set({
+    minute: nowJST.minute >= 30 ? 30 : 0,
+  });
 
   const lineInfo = {
     average: {
@@ -120,6 +127,25 @@ export default function Graph(props: GraphProps) {
     return newDP;
   });
 
+  const DotWithNow = (props: any): ReactNode => {
+    const { cx, cy, stroke, payload, r, fill, strokeWidth } = props;
+    const { from } = payload;
+
+    // If the current time is within the next half hour, color the dot
+    const fillToUse = from === startOfLatestHalfHour.toISO() ? "red" : fill;
+
+    return (
+      <Dot
+        cx={cx}
+        cy={cy}
+        r={r}
+        stroke={stroke}
+        fill={fillToUse}
+        strokeWidth={strokeWidth}
+      ></Dot>
+    );
+  };
+
   // Copy first Datapoint to the Back, with hour '24' so we get a neat 'midnight to midnight' line
   // const adjustedData = JSON.parse(JSON.stringify(data));
   // const wrapAround = JSON.parse(JSON.stringify(adjustedData[0]));
@@ -139,6 +165,7 @@ export default function Graph(props: GraphProps) {
         type="monotone"
         dataKey="forecast"
         stroke={lineInfo.forecast.color}
+        dot={<DotWithNow />}
       />
       <Line
         name={lineInfo.target.name}
