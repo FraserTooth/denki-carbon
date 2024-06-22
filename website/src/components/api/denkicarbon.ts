@@ -18,13 +18,13 @@ export const supportedUtilities = [
 
 export type Utilities = (typeof supportedUtilities)[number];
 
-export interface DenkiCarbonV2QueryParams {
+export interface DenkiCarbonGetAreaDataQueryParams {
   tso: string;
   from: string;
   to: string;
   includeForecast: boolean;
 }
-export interface DenkiCarbonV2 {
+export interface DenkiCarbonGetAreaData {
   tso: string;
   datetimeFrom: DateTime;
   datetimeTo: DateTime;
@@ -32,7 +32,7 @@ export interface DenkiCarbonV2 {
   averagePredictedCarbonIntensity?: number;
   predictedCarbonIntensity?: number;
 }
-const defaultDenkiCarbonV2: DenkiCarbonV2[] = [
+const defaultDenkiCarbonGetAreaData: DenkiCarbonGetAreaData[] = [
   {
     tso: "tepco",
     datetimeFrom: DateTime.fromISO("2020-01-01T15:00:00.000Z"),
@@ -87,61 +87,7 @@ const createCache = <StoredDataType>() => {
  *
  * @returns API calling interface
  */
-function createAPIInterface<DataType, PathFormat>(
-  defaultData: DataType,
-  unpacker: (raw: any) => DataType = (raw) => raw,
-  endpointPath: string
-) {
-  // Cache in closure
-  const cache = createCache<DataType>();
-
-  // Return Function
-  const callAPI = async (
-    setData: (data: DataType) => void,
-    utility: Utilities,
-    ...restOfPathVariables: PathFormat[]
-  ): Promise<void> => {
-    setData(defaultData);
-
-    const cacheData = cache.getCache(utility);
-    if (cacheData) {
-      console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
-      return setData(cacheData);
-    }
-
-    const requestURL = restOfPathVariables.reduce(
-      (fullPath, currentVar) => `${fullPath}/${currentVar}`,
-      `${apiURL}/${endpointPath}/${utility}`
-    );
-    const response = await fetch(requestURL);
-
-    if (response.ok === false) {
-      console.error("API Call Failed Retrying...");
-      console.error(response);
-      setTimeout(() => callAPI(setData, utility, ...restOfPathVariables), 2000);
-      return;
-    }
-
-    const result: DataType = await response.json();
-
-    const data: DataType = unpacker(result);
-
-    cache.setCache(utility, data);
-    setData(data);
-  };
-  return callAPI;
-}
-
-/**
- * Create API Interface
- *
- * @param endpointPath endpoint path, don't put '/' on the ends
- * @param defaultData the default data for useState
- * @param unpacker basic function to unpack the data down to the main array
- *
- * @returns API calling interface
- */
-function createAPIV2Interface<DataType, Params>(
+function createAPIInterface<DataType, Params>(
   defaultData: DataType,
   unpacker: (raw: any) => DataType = (raw) => raw,
   endpointPath: string
@@ -157,6 +103,7 @@ function createAPIV2Interface<DataType, Params>(
   ): Promise<void> => {
     setData(defaultData);
 
+    // TODO: setup cache
     // const cacheData = cache.getCache(utility);
     // if (cacheData) {
     //   console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
@@ -185,25 +132,25 @@ function createAPIV2Interface<DataType, Params>(
   return callAPI;
 }
 
-const retriveDataDenkiCarbonV2 = createAPIV2Interface<
-  DenkiCarbonV2[],
-  DenkiCarbonV2QueryParams
+const retriveDataDenkiCarbon = createAPIInterface<
+  DenkiCarbonGetAreaData[],
+  DenkiCarbonGetAreaDataQueryParams
 >(
-  defaultDenkiCarbonV2,
-  (raw: Record<string, string>[]): DenkiCarbonV2[] => {
+  defaultDenkiCarbonGetAreaData,
+  (raw: Record<string, string>[]): DenkiCarbonGetAreaData[] => {
     return raw.map((raw) => ({
       ...raw,
       datetimeFrom: DateTime.fromISO(raw.datetimeFrom),
       datetimeTo: DateTime.fromISO(raw.datetimeTo),
-    })) as DenkiCarbonV2[]; // Trust me bro
+    })) as DenkiCarbonGetAreaData[]; // Trust me bro
   },
   "v1/area_data"
 );
 
 export const denkiCarbon = {
-  denkiCarbonV2: {
-    default: defaultDenkiCarbonV2,
-    retrive: retriveDataDenkiCarbonV2,
+  denkiCarbon: {
+    default: defaultDenkiCarbonGetAreaData,
+    retrive: retriveDataDenkiCarbon,
   },
 };
 export default denkiCarbon;

@@ -38,10 +38,10 @@ export default function Main() {
 
   // V2 Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
-    intensity.denkiCarbonV2.default
+    intensity.denkiCarbon.default
   );
   useEffect(() => {
-    intensity.denkiCarbonV2.retrive(setCarbonIntensityData, utility, {
+    intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
       tso: utility,
       from: startOfDayJST.toISO() ?? "",
       to: lastBlockOfDayJST.toISO() ?? "",

@@ -9,7 +9,7 @@ import {
   Legend,
 } from "recharts";
 
-import { DenkiCarbonV2 } from "../api/denkicarbon";
+import { DenkiCarbonGetAreaData } from "../api/denkicarbon";
 
 import { CircularProgress, Card, makeStyles } from "@material-ui/core";
 
@@ -30,7 +30,7 @@ const INDUSTRY_TARGET_2030 = 370;
 const UK_AVERAGE_2020 = 181;
 
 interface GraphProps {
-  intensityData: DenkiCarbonV2[];
+  intensityData: DenkiCarbonGetAreaData[];
 }
 
 export default function Graph(props: GraphProps) {
