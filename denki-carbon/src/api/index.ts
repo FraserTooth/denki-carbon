@@ -26,6 +26,10 @@ const app = new Elysia({ normalize: true })
       },
     })
   )
+  // TODO: Maybe use the root path for a landing page? Currently it's just a redirect to the docs
+  .get("/", ({ redirect }) => {
+    return redirect("/docs");
+  })
   .get(
     "/v1/area_data",
     ({ query }) => areaDataGetHandler(query),
