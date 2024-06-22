@@ -91,7 +91,7 @@ function createAPIInterface<DataType, Params>(
   endpointPath: string
 ) {
   // Cache in closure
-  // const cache = createCache<DataType>();
+  const cache = createCache<DataType>();
 
   // Return Function
   const callAPI = async (
@@ -101,12 +101,11 @@ function createAPIInterface<DataType, Params>(
   ): Promise<void> => {
     setData(defaultData);
 
-    // TODO: setup cache
-    // const cacheData = cache.getCache(utility);
-    // if (cacheData) {
-    //   console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
-    //   return setData(cacheData);
-    // }
+    const cacheData = cache.getCache(utility);
+    if (cacheData) {
+      console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
+      return setData(cacheData);
+    }
 
     const requestURL =
       `${apiURL}/${endpointPath}?` +
@@ -116,7 +115,7 @@ function createAPIInterface<DataType, Params>(
     if (response.ok === false) {
       console.error("API Call Failed Retrying...");
       console.error(response);
-      // setTimeout(() => callAPI(setData, utility, params), 2000);
+      setTimeout(() => callAPI(setData, utility, params), 2000);
       return;
     }
 
@@ -124,7 +123,7 @@ function createAPIInterface<DataType, Params>(
 
     const data: DataType = unpacker(result);
 
-    // cache.setCache(utility, data);
+    cache.setCache(utility, data);
     setData(data);
   };
   return callAPI;

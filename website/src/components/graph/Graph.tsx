@@ -18,7 +18,6 @@ import {
   Typography,
 } from "@material-ui/core";
 
-import Title from "./Title";
 import useWindowDimensions from "./resize";
 import CustomTooltip, { timeFormatter } from "./Tooltip";
 
@@ -120,8 +119,6 @@ export default function Graph(props: GraphProps) {
 
     return newDP;
   });
-
-  console.log(data);
 
   // Copy first Datapoint to the Back, with hour '24' so we get a neat 'midnight to midnight' line
   // const adjustedData = JSON.parse(JSON.stringify(data));
