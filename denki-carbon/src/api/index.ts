@@ -12,6 +12,7 @@ const app = new Elysia({ normalize: true })
   .use(
     swagger({
       path: "/docs",
+      exclude: ["/"],
     })
   )
   .use(cors())

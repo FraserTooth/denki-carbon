@@ -1,60 +1,15 @@
 import { Static, t } from "elysia";
 import { db } from "../../db";
-import { JapanTsoName } from "../../const";
 import { areaDataProcessed, carbonIntensityForecasts } from "../../schema";
 import { between, eq, and } from "drizzle-orm";
 import { getTotalCarbonIntensityForAreaDataRow } from "../../carbon";
 import { numberifyAreaDataRow, rTo3Dec, strToNum } from "../utils";
 import { DateTime } from "luxon";
-
-const areaDataGetQueryParamsValidator = t.Object({
-  tso: t.Enum(JapanTsoName),
-  from: t.Date(),
-  to: t.Date(),
-  includeForecast: t.Optional(t.String()),
-});
-
-const areaDataGetResponseValidator200ElementHistoric = t.Object({
-  tso: t.String(), // TODO: can't this be an enum?
-  dateJST: t.String(),
-  timeFromJST: t.String(),
-  timeToJST: t.String(),
-  datetimeFrom: t.Date({ nullable: false }),
-  datetimeTo: t.Date(),
-  totalDemandkWh: t.Nullable(t.Number()),
-  nuclearkWh: t.Nullable(t.Number()),
-  allfossilkWh: t.Nullable(t.Number()),
-  lngkWh: t.Nullable(t.Number()),
-  coalkWh: t.Nullable(t.Number()),
-  oilkWh: t.Nullable(t.Number()),
-  otherFossilkWh: t.Nullable(t.Number()),
-  hydrokWh: t.Nullable(t.Number()),
-  geothermalkWh: t.Nullable(t.Number()),
-  biomasskWh: t.Nullable(t.Number()),
-  solarOutputkWh: t.Nullable(t.Number()),
-  solarThrottlingkWh: t.Nullable(t.Number()),
-  windOutputkWh: t.Nullable(t.Number()),
-  windThrottlingkWh: t.Nullable(t.Number()),
-  pumpedStoragekWh: t.Nullable(t.Number()),
-  batteryStoragekWh: t.Nullable(t.Number()),
-  interconnectorskWh: t.Nullable(t.Number()),
-  otherkWh: t.Nullable(t.Number()),
-  totalkWh: t.Nullable(t.Number()),
-  lastUpdated: t.Date(),
-  carbonIntensity: t.Number(),
-  averagePredictedCarbonIntensity: t.Optional(t.Number()),
-});
-
-const areaDataGetResponseValidator200ElementForecast = t.Object({
-  tso: t.String(), // TODO: can't this be an enum?
-  dateJST: t.String(),
-  timeFromJST: t.String(),
-  timeToJST: t.String(),
-  datetimeFrom: t.Date({ nullable: false }),
-  datetimeTo: t.Date(),
-  predictedCarbonIntensity: t.Optional(t.Number()),
-  createdAt: t.Date(),
-});
+import {
+  areaDataGetQueryParamsValidator,
+  areaDataGetResponseValidator200ElementForecast,
+  areaDataGetResponseValidator200ElementHistoric,
+} from "../validators/areaData";
 
 const areaDataGetResponseValidator200Element = t.Union([
   areaDataGetResponseValidator200ElementHistoric,
