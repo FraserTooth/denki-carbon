@@ -37,7 +37,7 @@ export default function Main() {
   // Utility Choice
   const [utility, setUtility] = useState(supportedUtilities[0]);
 
-  // V2 Data
+  // API Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
     intensity.denkiCarbon.default
   );

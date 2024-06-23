@@ -10,7 +10,7 @@ import {
   Dot,
 } from "recharts";
 
-import { DenkiCarbonGetAreaData } from "../api/denkicarbon";
+import { DenkiCarbonGetAreaDataElement } from "../api/denkicarbon";
 
 import {
   CircularProgress,
@@ -36,7 +36,7 @@ const INDUSTRY_TARGET_2030 = 370;
 const UK_AVERAGE_2020 = 181;
 
 interface GraphProps {
-  intensityData: DenkiCarbonGetAreaData[];
+  intensityData: DenkiCarbonGetAreaDataElement[];
 }
 
 export default function Graph(props: GraphProps) {
