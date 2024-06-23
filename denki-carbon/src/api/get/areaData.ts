@@ -11,14 +11,10 @@ import {
   areaDataGetResponseValidator200ElementHistoric,
 } from "../validators/areaData";
 
-const areaDataGetResponseValidator200Element = t.Union([
-  areaDataGetResponseValidator200ElementHistoric,
-  areaDataGetResponseValidator200ElementForecast,
-]);
-
-const areaDataGetResponseValidator200 = t.Array(
-  areaDataGetResponseValidator200Element
-);
+const areaDataGetResponseValidator200 = t.Object({
+  historic: t.Array(areaDataGetResponseValidator200ElementHistoric),
+  forecast: t.Optional(t.Array(areaDataGetResponseValidator200ElementForecast)),
+});
 
 const areaDataGetResponseValidator = {
   200: areaDataGetResponseValidator200,
@@ -60,7 +56,7 @@ export const areaDataGetHandler = async (
 
   const includeForecast = query.includeForecast === "true";
   if (!includeForecast) {
-    return resultsWithIntensity;
+    return { historic: resultsWithIntensity };
   }
 
   // Get the forecasted data
@@ -145,9 +141,9 @@ export const areaDataGetHandler = async (
     }
   );
 
-  const finalResults: Static<typeof areaDataGetResponseValidator200> = [
-    ...resultsWithForecasts,
-    ...forecastsInFutureProcessed,
-  ];
+  const finalResults: Static<typeof areaDataGetResponseValidator200> = {
+    historic: resultsWithForecasts,
+    forecast: forecastsInFutureProcessed,
+  };
   return finalResults;
 };

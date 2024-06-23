@@ -24,7 +24,12 @@ export interface DenkiCarbonGetAreaDataQueryParams {
   to: string;
   includeForecast: boolean;
 }
+
 export interface DenkiCarbonGetAreaData {
+  historic: DenkiCarbonGetAreaDataElement[];
+  forecast: DenkiCarbonGetAreaDataElement[];
+}
+export interface DenkiCarbonGetAreaDataElement {
   tso: string;
   datetimeFrom: DateTime;
   datetimeTo: DateTime;
@@ -32,7 +37,7 @@ export interface DenkiCarbonGetAreaData {
   averagePredictedCarbonIntensity?: number;
   predictedCarbonIntensity?: number;
 }
-const defaultDenkiCarbonGetAreaData: DenkiCarbonGetAreaData[] = [
+const defaultDenkiCarbonGetAreaData: DenkiCarbonGetAreaDataElement[] = [
   {
     tso: "tepco",
     datetimeFrom: DateTime.fromISO("2020-01-01T15:00:00.000Z"),
@@ -130,16 +135,17 @@ function createAPIInterface<DataType, Params>(
 }
 
 const retriveDataDenkiCarbon = createAPIInterface<
-  DenkiCarbonGetAreaData[],
+  DenkiCarbonGetAreaDataElement[],
   DenkiCarbonGetAreaDataQueryParams
 >(
   defaultDenkiCarbonGetAreaData,
-  (raw: Record<string, string>[]): DenkiCarbonGetAreaData[] => {
-    return raw.map((raw) => ({
-      ...raw,
-      datetimeFrom: DateTime.fromISO(raw.datetimeFrom),
-      datetimeTo: DateTime.fromISO(raw.datetimeTo),
-    })) as DenkiCarbonGetAreaData[]; // Trust me bro
+  (raw: { historic: any; forecast: any }): DenkiCarbonGetAreaDataElement[] => {
+    // TODO: set up a better validator
+    return [...raw.historic, ...raw.forecast].map((element) => ({
+      ...element,
+      datetimeFrom: DateTime.fromISO(element.datetimeFrom),
+      datetimeTo: DateTime.fromISO(element.datetimeTo),
+    })) as DenkiCarbonGetAreaDataElement[];
   },
   "v1/area_data"
 );

@@ -28,7 +28,7 @@ export const strToNum = (str: string): number => {
  * Convert a numerical string to a rounded number
  *
  * @param str - The string to convert
- * @returns {number} - The number, rounded to 3 decimal places
+ * @returns {number} - The number
  */
 export const nullableStrToNum = (str: string | null): number | null => {
   if (str === null || str.length === 0) return null;
