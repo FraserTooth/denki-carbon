@@ -15,7 +15,7 @@ const app = new Elysia({ normalize: true })
       exclude: ["/"],
     })
   )
-  .use(cors())
+  .use(cors({ origin: true }))
   .use(elysiaLogger())
   .use(
     cron({
