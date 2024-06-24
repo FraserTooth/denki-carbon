@@ -12,7 +12,25 @@ const app = new Elysia({ normalize: true })
   .use(
     swagger({
       path: "/docs",
-      exclude: ["/"],
+      exclude: ["/", "/docs"],
+      documentation: {
+        info: {
+          title: "Denki Carbon API Documentation",
+          description: `
+            API for the Denki Carbon project, which provides historical energy data and supplementary carbon intensity values for Japan's electricity grid.
+            The data is sourced from each TSO's website and is updated every 30 minutes.
+            This documentation is automatically generated from the API code itself, and is intended to be used to understand how to interact with the API.
+            `,
+          version: "1.0.0",
+          contact: {
+            url: "https://frasertooth.dev",
+          },
+          license: {
+            name: "LGPL-3.0",
+            url: "https://www.gnu.org/licenses/lgpl-3.0.html",
+          },
+        },
+      },
     })
   )
   .use(cors({ origin: true }))
