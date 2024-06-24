@@ -45,6 +45,16 @@ const app = new Elysia({ normalize: true })
       },
     })
   )
+  .use(
+    cron({
+      name: "getNewData",
+      pattern: "5 0 * * 1",
+      async run() {
+        logger.info("Running cron job to ensure new data in place");
+        await scrapeJob(SUPPORTED_TSOS, ScrapeType.New, false);
+      },
+    })
+  )
   // TODO: Maybe use the root path for a landing page? Currently it's just a redirect to the docs
   .get("/", ({ redirect }) => {
     return redirect("/docs");
