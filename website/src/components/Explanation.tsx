@@ -40,6 +40,13 @@ export default function Explanation() {
     <Box className={classes.explanation}>
       <Box className={classes.section}>
         <Typography variant="h5" className={classes.explanationTitle}>
+          {t("explanation.whatSection.title")}
+        </Typography>
+        {buildParagraph("explanation.whatSection.paragraph")}
+      </Box>
+
+      <Box className={classes.section}>
+        <Typography variant="h5" className={classes.explanationTitle}>
           {t("explanation.forecastSection.title")}
         </Typography>
         {buildParagraph("explanation.forecastSection.paragraph")}

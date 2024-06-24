@@ -58,6 +58,15 @@
   },
   "carbonGraphTitle": "Today's Carbon Intensity with Forecast",
   "explanation": {
+    "whatSection": {
+      "title": "So what?",
+      "paragraph": [
+        "The carbon intensity of electricity is a measure of how much CO₂ is emitted for each unit of electricity consumed.",
+        "This is important because it helps us understand the environmental impact of our electricity consumption, depending on what fuel sources are used to generate it at any given point in time.",
+        "For example, if the carbon intensity value is high (>500) its a good time to avoid using electricity, or to use it more efficiently, as the electricity you are using is likely to be coming from a high carbon source like coal or gas.",
+        "Knowing what the current and likely future carbon intensity is can help you make more informed decisions about when to use electricity in order to reduce your carbon footprint."
+      ]
+    },
     "forecastSection": {
       "title": "Why do you need a forecast?",
       "paragraph": [
@@ -68,7 +77,7 @@
       ]
     },
     "howSection": {
-      "title": "How is the Carbon Intensity Calculated?",
+      "title": "How is the Carbon Intensity calculated?",
       "paragraph": [
         "The carbon intensity is calculated for a given period by figuring out the proportion of energy generation that came from each fuel type.",
         "This proportion is then multiplied by the Carbon Intensity for that fuel type, for example, the carbon intensity factor for coal is 937 gCO₂/kWh with Combined Cycle Gas Turbines (CCGT) having a factor of 394 gCO₂/kWh.",
