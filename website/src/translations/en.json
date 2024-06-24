@@ -42,7 +42,8 @@
     "hashtags": ["renewableenergy", "climateaction", "netzero", "japan"],
     "twitter": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
     "facebook": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
-    "linkedin": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh"
+    "linkedin": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
+    "line": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh"
   },
   "graph": {
     "average": "Average",

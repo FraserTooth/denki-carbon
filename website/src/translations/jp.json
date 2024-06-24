@@ -42,7 +42,8 @@
     "hashtags": ["renewableenergy", "climateaction", "netzero"],
     "twitter": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
     "facebook": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
-    "linkedin": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh"
+    "linkedin": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
+    "line": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh"
   },
   "graph": {
     "average": "平均",

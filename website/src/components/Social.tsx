@@ -3,12 +3,14 @@ import { Utilities } from "./api/denkicarbon";
 import { Box, makeStyles } from "@material-ui/core";
 import { useTranslation } from "react-i18next";
 import {
-  TwitterIcon,
+  XIcon,
   TwitterShareButton,
   FacebookIcon,
   FacebookShareButton,
   LinkedinIcon,
   LinkedinShareButton,
+  LineShareButton,
+  LineIcon,
 } from "react-share";
 
 interface SocialProps {
@@ -47,14 +49,14 @@ export default function Social(props: SocialProps) {
         title={t("social.twitter", { utility, carbonIntensity })}
         hashtags={hashtags}
       >
-        <TwitterIcon size={32} round={true} />
+        <XIcon size={32} round={true} />
       </TwitterShareButton>
       <FacebookShareButton
         disabled={carbonIntensity === 0}
         disabledStyle={{ opacity: 0.2 }}
         className={classes.icons}
         url={url}
-        hashtag={hashtags[0]}
+        hashtag={`#${hashtags[0]}`}
       >
         <FacebookIcon size={32} round={true} />
       </FacebookShareButton>
@@ -65,9 +67,19 @@ export default function Social(props: SocialProps) {
         url={url}
         title="Denki Carbon"
         summary={t("social.linkedin", { utility, carbonIntensity })}
+        source="https://denkicarbon.jp"
       >
         <LinkedinIcon size={32} round={true} />
       </LinkedinShareButton>
+      <LineShareButton
+        disabled={carbonIntensity === 0}
+        disabledStyle={{ opacity: 0.2 }}
+        className={classes.icons}
+        url={url}
+        title={t("social.line", { utility, carbonIntensity })}
+      >
+        <LineIcon size={32} round={true} />
+      </LineShareButton>
     </Box>
   );
 }
