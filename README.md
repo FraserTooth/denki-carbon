@@ -15,6 +15,16 @@ The project includes:
 - Website [denkicarbon.jp](https://api.denkicarbon.jp/docs)
 - API Documentation [api.denkicarbon.jp/docs](https://api.denkicarbon.jp/docs)
 
+## Main Technology Used
+
+- [Bun](https://bun.sh/) for the runtime
+- [Postgres](https://www.postgresql.org/) for the Database
+- [Drizzle](https://orm.drizzle.team/) for the ORM
+- [Elysia](https://elysiajs.com/) for the API
+- [TensorflowJS](https://www.tensorflow.org/js) for the machine learning and prediction systems
+  - _Note: Getting TensorflowJS to work in the Bun runtime may require using npm to help sort out depenancy issues. Try `npm rebuild @tensorflow/tfjs-node --build-addon-from-source` if you see errors during runtime_
+- [React](https://react.dev/) for the frontend website
+
 ## Quickstart
 
 - Bun is used for the runtime, so please install it here: https://bun.sh/
@@ -27,6 +37,8 @@ You need to set up a Postgres Database and create a user (https://www.postgresql
 cd denki-carbon
 bun install
 bun migrate
+
+# Scrape all data and make a prediction for all TSOs
 bun seed
 ```
 
@@ -51,7 +63,8 @@ bun install
 bun train
 ```
 
-New models will appear in the `/temp` folder
+New models will be written to the `/temp` folder.
+If you want to propose a model for use in the main app, move the whole folder into the `/src/forecast/models` folder and remove the old folder for that utility.
 
 #### Docker
 
@@ -62,6 +75,15 @@ cd denki-carbon
 bun install
 bun up
 ```
+
+## Deployment
+
+Currently I self host everything at [denkicarbon.jp](https://denkicarbon.jp/) using:
+
+- A [Hetzner](https://www.hetzner.com/) instance for the server itself
+  - I'm able to run everything in this repo and more with their most basic offering
+- [Coolify](https://coolify.io/) to manage the CICD and Docker containers
+- [Cloudflare](https://www.cloudflare.com/) for DNS wrangling and some other nice features
 
 ## How to Contribute
 
