@@ -28,14 +28,32 @@ const NEW_CSV_FORMAT = {
  *
  * @returns URLs for real-time CSV files
  */
-const getRealTimeCSVUrls = (): string[] => {
+const getRealTimeCSVUrls = (
+  newCsvUrlsMonthlyConfirmedSeen: string[]
+): string[] => {
+  // Get datestrings from the URLs we've already seen
+  const dateStrings = newCsvUrlsMonthlyConfirmedSeen.map(
+    (url) =>
+      // Format _yyyyMM_
+      url.match(/_\d\d\d\d\d\d_/)?.[0]
+  );
+  // Remove underscores and get month as number
+  const months = dateStrings.map((dateString) =>
+    Number(dateString?.replaceAll("_", "").slice(4, 6))
+  );
   const nowJST = DateTime.now().setZone("Asia/Tokyo");
-  const startOfLastMonth = nowJST.minus({ months: 1 }).startOf("month");
-  const currentMonth = nowJST;
+  const lastMonth = nowJST.minus({ months: 1 }).month;
+
+  // Start with the the previous month if we haven't seen any URLs for it
+  const startOfStartingMonth = months.includes(lastMonth)
+    ? nowJST.startOf("month")
+    : nowJST.minus({ months: 1 }).startOf("month");
+
+  const today = nowJST;
   const urls = [];
   for (
-    let date = startOfLastMonth;
-    date <= currentMonth;
+    let date = startOfStartingMonth;
+    date <= today;
     date = date.plus({ days: 1 })
   ) {
     const dateString = date.toFormat("yyyyMMdd");
@@ -198,18 +216,16 @@ export const getTohokuAreaData = async (
     format: "new",
   }));
 
-  const newCsvUrlsDaily = getRealTimeCSVUrls();
+  const newCsvUrlsDaily = getRealTimeCSVUrls(newCsvUrlsMonthlyConfirmed);
   const newUrlsDaily = newCsvUrlsDaily.map((url) => ({ url, format: "new" }));
 
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All)
       return [...oldUrls, ...newUrls, ...newUrlsDaily];
     if (scrapeType === ScrapeType.New) return [...newUrls, ...newUrlsDaily];
-    // Sort so that the latest file is last
     if (scrapeType === ScrapeType.Latest) return [...newUrlsDaily];
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
-
   logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
