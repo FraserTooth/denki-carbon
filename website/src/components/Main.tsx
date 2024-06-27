@@ -35,7 +35,7 @@ const oneDayAgo = nowJST.minus({ days: 1 });
 
 export default function Main() {
   // Utility Choice
-  const [utility, setUtility] = useState(supportedUtilities[0]);
+  const [utility, setUtility] = useState(supportedUtilities[1]);
 
   // API Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
