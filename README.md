@@ -27,7 +27,10 @@ The project includes:
 
 ## Quickstart
 
-- Bun is used for the runtime, so please install it here: https://bun.sh/
+Bun is used for the runtime, so please install it here: https://bun.sh/
+
+First off, ensure that you've created .env files in each repo and populated them with the right values.
+Use the `...example` files as a template.
 
 #### Database and Seeding the data
 
@@ -83,7 +86,11 @@ Currently I self host everything at [denkicarbon.jp](https://denkicarbon.jp/) us
 - A [Hetzner](https://www.hetzner.com/) instance for the server itself
   - I'm able to run everything in this repo and more with their most basic offering
 - [Coolify](https://coolify.io/) to manage the CICD and Docker containers
+
+Some external services I use are:
+
 - [Cloudflare](https://www.cloudflare.com/) for DNS wrangling and some other nice features
+- [Grafana Cloud](https://grafana.com/products/cloud/) I could probably self host this, but the free tier was good enough
 
 ## How to Contribute
 
