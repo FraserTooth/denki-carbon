@@ -4,7 +4,6 @@ import { areaDataGetHandler, areaDataGetValidator } from "./get/areaData";
 import cron from "@elysiajs/cron";
 import { ScrapeType, scrapeJob } from "../scrapers";
 import { SUPPORTED_TSOS } from "../const";
-import { logger as elysiaLogger } from "@bogeychan/elysia-logger";
 import { logger } from "../utils";
 import cors from "@elysiajs/cors";
 
@@ -34,14 +33,19 @@ const app = new Elysia({ normalize: true })
     })
   )
   .use(cors({ origin: true }))
-  .use(elysiaLogger())
+  .use(logger.into())
   .use(
     cron({
       name: "getLatestDataAndForecast",
       pattern: "1,31 * * * *",
       async run() {
         logger.info("Running cron job to get latest data and forecast...");
-        await scrapeJob(SUPPORTED_TSOS, ScrapeType.Latest, true);
+        try {
+          await scrapeJob(SUPPORTED_TSOS, ScrapeType.Latest, true);
+        } catch (e) {
+          const error = e as Error;
+          logger.error(error, `Error scraping data: ${error.message}`);
+        }
       },
     })
   )
@@ -51,7 +55,12 @@ const app = new Elysia({ normalize: true })
       pattern: "5 0 * * 1",
       async run() {
         logger.info("Running cron job to ensure new data in place");
-        await scrapeJob(SUPPORTED_TSOS, ScrapeType.New, false);
+        try {
+          await scrapeJob(SUPPORTED_TSOS, ScrapeType.New, false);
+        } catch (e) {
+          const error = e as Error;
+          logger.error(error, `Error scraping data: ${error.message}`);
+        }
       },
     })
   )
@@ -64,7 +73,10 @@ const app = new Elysia({ normalize: true })
     ({ query }) => areaDataGetHandler(query),
     areaDataGetValidator
   )
-
+  .onError((ctx) => {
+    logger.error(ctx, ctx.error.name);
+    return "onError";
+  })
   .listen(3000);
 
 logger.info(

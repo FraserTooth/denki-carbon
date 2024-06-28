@@ -3,26 +3,38 @@ import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import { SQL, sql } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { getTableColumns } from "drizzle-orm/utils";
-import pino from "pino";
+import { createPinoLogger } from "@bogeychan/elysia-logger";
 
-const transport = () =>
-  pino.transport({
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      ignore: "pid,hostname",
+// Generate a pretty logger for local development
+const prettyTransport = {
+  target: "pino-pretty",
+  options: {
+    colorize: true,
+    ignore: "pid,hostname",
+  },
+};
+
+// Generate a Loki logger for non-local environments
+const lokiTransport = {
+  target: "pino-loki",
+  options: {
+    batching: true,
+    interval: 5,
+    host: process.env.GRAFANA_LOKI_HOST || "",
+    basicAuth: {
+      username: process.env.GRAFANA_LOKI_USERNAME || "",
+      password: process.env.GRAFANA_LOKI_PASSWORD || "",
     },
-  });
+  },
+};
 
 const transportConfig =
-  process.env.ENVIRONMENT === "local" ? transport() : undefined;
+  process.env.ENVIRONMENT === "local" ? prettyTransport : lokiTransport;
 
-export const logger = pino(
-  {
-    level: process.env.PINO_LOG_LEVEL || "info",
-  },
-  transportConfig
-);
+export const logger = createPinoLogger({
+  level: process.env.PINO_LOG_LEVEL || "info",
+  transport: transportConfig,
+});
 
 export const conflictUpdateAllExcept = <
   T extends PgTable,
