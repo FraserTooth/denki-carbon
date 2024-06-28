@@ -10,7 +10,7 @@ const prettyTransport = {
   target: "pino-pretty",
   options: {
     colorize: true,
-    ignore: "pid,hostname",
+    ignore: "pid,hostname,app",
   },
 };
 
@@ -33,6 +33,7 @@ const transportConfig =
 
 export const logger = createPinoLogger({
   level: process.env.PINO_LOG_LEVEL || "info",
+  base: { app: "denki-carbon" },
   transport: transportConfig,
 });
 
