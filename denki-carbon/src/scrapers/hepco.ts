@@ -13,6 +13,12 @@ const OLD_CSV_FORMAT = {
   intervalMinutes: 60,
 };
 
+const OLD_XLS_FORMAT = {
+  blocksInDay: 24,
+  headerRows: 3, // During processing we trim a row, so its one less than the usual header rows
+  intervalMinutes: 60,
+};
+
 const NEW_CSV_FORMAT = {
   blocksInDay: 48,
   encoding: "Shift_JIS",
@@ -34,9 +40,56 @@ const parseAverageMWFor30minToKwh = (raw: string): number => {
   return averageKw * (30 / 60);
 };
 
-const parseOldXLS = (csv: string[][]): AreaCSVDataProcessed[] => {
-  console.log(csv);
-  return [];
+const parseOldXLS = (xlsCsv: string[][]): AreaCSVDataProcessed[] => {
+  const dataRows = xlsCsv.slice(OLD_XLS_FORMAT.headerRows);
+  let lastDate: string | undefined = undefined;
+  const data: AreaCSVDataProcessed[] = dataRows.map((row, index) => {
+    // 月日	時刻	エリア需要	原子力	火力	水力	地熱	バイオマス	太陽光実績	太陽光抑制量	風力実績	風力抑制量	揚水	連系線	供給力合計
+    const [
+      date, // "月日" - only filled in for the first row of the day - e.g "2024/1/1"
+      time, // "時刻" - Japanese format - e.g. "0時", "1時"
+      totalDemand_MWh, // "エリア需要"
+      nuclear_MWh, // "原子力"
+      allfossil_MWh, // "火力"
+      hydro_MWh, // "水力"
+      geothermal_MWh, // "地熱"
+      biomass_MWh, // "バイオマス"
+      solarOutput_MWh, // "太陽光実績"
+      solarThrottling_MWh, // "太陽光抑制量"
+      windOutput_MWh, // "風力実績"
+      windThrottling_MWh, // "風力抑制量"
+      pumpedStorage_MWh, // "揚水"
+      interconnectors_MWh, // "連系線"
+      totalSupply_MWh, // "供給力合計"
+    ] = row;
+    if (date) lastDate = date;
+    if (!lastDate) throw new Error(`Cannot resolve date for row ${index}`);
+    const fromUTC = DateTime.fromFormat(
+      `${lastDate.trim()} ${time.trim()}`,
+      "yyyy/MM/dd H時",
+      {
+        zone: "Asia/Tokyo",
+      }
+    ).toUTC();
+    return {
+      fromUTC,
+      toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
+      totalDemandkWh: parseDpToKwh(totalDemand_MWh),
+      nuclearkWh: parseDpToKwh(nuclear_MWh),
+      allfossilkWh: parseDpToKwh(allfossil_MWh),
+      hydrokWh: parseDpToKwh(hydro_MWh),
+      geothermalkWh: parseDpToKwh(geothermal_MWh),
+      biomasskWh: parseDpToKwh(biomass_MWh),
+      solarOutputkWh: parseDpToKwh(solarOutput_MWh),
+      solarThrottlingkWh: parseDpToKwh(solarThrottling_MWh),
+      windOutputkWh: parseDpToKwh(windOutput_MWh),
+      windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
+      pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
+      interconnectorskWh: parseDpToKwh(interconnectors_MWh),
+      totalkWh: parseDpToKwh(totalSupply_MWh),
+    };
+  });
+  return data;
 };
 
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
@@ -188,13 +241,6 @@ export const getHepcoAreaData = async (
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
-  // const urlsToDownload = [
-  //   {
-  //     url: "https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/xls/sup_dem_results_2018_2q.xls",
-  //     format: "old",
-  //   },
-  // ];
-
   logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
@@ -237,9 +283,15 @@ export const getHepcoAreaData = async (
       } catch (e) {
         const error = e as Error;
         logger.error({ error: error.message, url });
+        return null;
       }
     })
   );
 
-  return dataByCSV;
+  // Filter out any failed downloads
+  const dataByCSVFiltered = dataByCSV.filter(
+    (data) => data !== null
+  ) as AreaDataFileProcessed[];
+
+  return dataByCSVFiltered;
 };

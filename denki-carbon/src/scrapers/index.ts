@@ -13,6 +13,7 @@ import { makePredictionFromMostRecentData } from "../forecast/predict";
 import { logger, conflictUpdateAllExcept, axiosInstance } from "../utils";
 import * as yauzlp from "yauzl-promise";
 import { getHepcoAreaData } from "./hepco";
+import xlsx from "node-xlsx";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -71,6 +72,27 @@ export const downloadCSV = async (
     if (url.includes("csv")) {
       const buffer = Buffer.from(dataResponse);
       return iconv.decode(buffer, encoding);
+    } else if (url.includes("xls")) {
+      const buffer = Buffer.from(dataResponse);
+      const recordsXLS = xlsx.parse(buffer, {
+        type: "buffer",
+        cellDates: true,
+        cellNF: false,
+        cellText: false,
+        UTC: true,
+      });
+      // Convert to CSV string
+      const csv = recordsXLS[0].data
+        .map((row: any[]) => {
+          if (row[0] instanceof Date) {
+            row[0] = DateTime.fromJSDate(row[0])
+              .setZone("Asia/Tokyo")
+              .toFormat("yyyy/MM/dd");
+          }
+          return row.join(",");
+        })
+        .join("\n");
+      return csv;
     } else if (url.includes("zip")) {
       const zipBuffer = Buffer.from(dataResponse);
       const buffer = await (async () => {
