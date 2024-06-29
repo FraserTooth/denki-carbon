@@ -12,6 +12,7 @@ import { getChubuAreaData } from "./chubu";
 import { makePredictionFromMostRecentData } from "../forecast/predict";
 import { logger, conflictUpdateAllExcept, axiosInstance } from "../utils";
 import * as yauzlp from "yauzl-promise";
+import { getHepcoAreaData } from "./hepco";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -43,11 +44,28 @@ export const getCSVUrlsFromPage = async (
   return csvUrls.sort();
 };
 
-export const downloadCSV = async (url: string, encoding: string) => {
+export const downloadCSV = async (
+  url: string,
+  encoding: string,
+  attempt: number = 1
+): Promise<string[][]> => {
   const response = await axiosInstance.get(url, {
     responseType: "arraybuffer",
   });
   const dataResponse = await response.data;
+
+  // If buffer is empty, retry up to 3 times
+  if (dataResponse.byteLength === 0) {
+    if (attempt >= 4) {
+      throw new Error(`Empty response for ${url}`);
+    }
+    logger.warn(
+      `Empty response for ${url}, retrying with attempt #${attempt + 1}`
+    );
+    // Wait 1 second before retrying
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return downloadCSV(url, encoding, attempt + 1);
+  }
 
   const decoded = await (async () => {
     if (url.includes("csv")) {
@@ -83,9 +101,19 @@ export const downloadCSV = async (url: string, encoding: string) => {
   })();
 
   const records: string[][] = parse(decoded, {
-    relax_column_count: true,
-    skip_empty_lines: true,
+    relaxColumnCount: true,
+    skipEmptyLines: true,
   });
+
+  // Trim empty rows, but only at the end of the file
+  for (let i = records.length - 1; i >= 0; i--) {
+    if (records[i].every((cell) => cell === "")) {
+      records.pop();
+    } else {
+      break;
+    }
+  }
+
   return records;
 };
 
@@ -210,6 +238,8 @@ export const scrapeTso = async (
       return getTepcoAreaData(scrapeType);
     } else if (utility === JapanTsoName.CHUBU) {
       return getChubuAreaData(scrapeType);
+    } else if (utility === JapanTsoName.HEPCO) {
+      return getHepcoAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
