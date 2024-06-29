@@ -35,7 +35,7 @@ const oneDayAgo = nowJST.minus({ days: 1 });
 
 export default function Main() {
   // Utility Choice
-  const [utility, setUtility] = useState(supportedUtilities[1]);
+  const [utility, setUtility] = useState(supportedUtilities[2]); // Default to TEPCO, TODO: swap to Enum
 
   // API Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
