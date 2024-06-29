@@ -5,6 +5,7 @@ import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { logger } from "../utils";
 
 const CSV_URL = `https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/index.html`;
+const LIVE_URL = `https://denkiyoho.hepco.co.jp/supply_demand_results.html`;
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
@@ -24,6 +25,46 @@ const NEW_CSV_FORMAT = {
   encoding: "Shift_JIS",
   headerRows: 2,
   intervalMinutes: 30,
+};
+
+const LATEST_CSV_FORMAT = {
+  blocksInDay: 48,
+  encoding: "Shift_JIS",
+  headerRows: 4,
+  intervalMinutes: 30,
+};
+
+/**
+ * This function gets the URLs for the CSV files from the HEPCO website for the current day and any previous days we can find
+ *
+ * HEPCO only provides the URLs for the current day on their forecast website
+ * And the historical data (shown below) only covers up to 5 days ago
+ * I've figured out that the URL for yesterday's data is the same as today's URL, but with the date changed,
+ * but any further back than that and it 404s
+ *
+ * Annoyingly this means there is a 4 day gap in the data you can get with an initial seed,
+ * naturally this should resolve itself over a few days, but its something that would be nice to get fixed
+ *
+ * @returns {Promise<string[]>} - An array of URLs for the CSV files
+ */
+const getLiveCSVUrls = async (): Promise<string[]> => {
+  const todayUrl = (
+    await getCSVUrlsFromPage(
+      LIVE_URL,
+      RegExp(/(.csv)$/),
+      "https://denkiyoho.hepco.co.jp/"
+    )
+  )[0];
+  const todayJSTString = DateTime.now()
+    .setZone("Asia/Tokyo")
+    .toFormat("yyyyMMdd");
+  const yesterdayJSTString = DateTime.now()
+    .setZone("Asia/Tokyo")
+    .minus({ days: 1 })
+    .toFormat("yyyyMMdd");
+  // Change date to yesterday
+  const yesterdayUrl = todayUrl.replace(todayJSTString, yesterdayJSTString);
+  return [yesterdayUrl, todayUrl];
 };
 
 const parseDpToKwh = (raw: string): number => {
@@ -169,10 +210,74 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       otherAverageMW, // "その他"
       totalAverageMW, // "合計"
     ] = row;
-    // TODO: I'm not really sure whether the TIME column is the start or end of the interval for HEPCO,
-    // since when you get the latest CSV, the TIME column most recently filled in is the next half hour interval.
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
+      "yyyy/M/d H:mm",
+      {
+        zone: "Asia/Tokyo",
+      }
+    ).toUTC();
+    const lngkWh = parseAverageMWFor30minToKwh(lngAverageMW);
+    const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
+    const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
+    const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
+    return {
+      fromUTC,
+      toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
+      totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
+      nuclearkWh: parseAverageMWFor30minToKwh(nuclearAverageMW),
+      allfossilkWh: lngkWh + coalkWh + oilkWh + otherFossilkWh,
+      lngkWh,
+      coalkWh,
+      oilkWh,
+      otherFossilkWh,
+      hydrokWh: parseAverageMWFor30minToKwh(hydroAverageMW),
+      geothermalkWh: parseAverageMWFor30minToKwh(geothermalAverageMW),
+      biomasskWh: parseAverageMWFor30minToKwh(biomassAverageMW),
+      solarOutputkWh: parseAverageMWFor30minToKwh(solarOutputAverageMW),
+      solarThrottlingkWh: parseAverageMWFor30minToKwh(solarThrottlingAverageMW),
+      windOutputkWh: parseAverageMWFor30minToKwh(windOutputAverageMW),
+      windThrottlingkWh: parseAverageMWFor30minToKwh(windThrottlingAverageMW),
+      pumpedStoragekWh: parseAverageMWFor30minToKwh(pumpedStorageAverageMW),
+      batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
+      interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
+      otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
+      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+    };
+  });
+  // Remove NaN rows
+  const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
+  logger.debug({ rowsSkipped: data.length - dataFiltered.length });
+  return dataFiltered;
+};
+
+const parseLatestCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
+  const dataRows = csv.slice(NEW_CSV_FORMAT.headerRows);
+  const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
+    const [
+      date, // "年月日"
+      time, // "時刻"
+      totalDemandAverageMW, // "エリア需要"
+      nuclearAverageMW, // "原子力"
+      lngAverageMW, // "火力（LNG）"
+      coalAverageMW, // "火力（石炭）"
+      oilAverageMW, // "火力（石油）"
+      otherFossilAverageMW, // "火力（その他）"
+      hydroAverageMW, // "水力"
+      geothermalAverageMW, // "地熱"
+      biomassAverageMW, // "バイオマス"
+      solarOutputAverageMW, // "太陽光実績"
+      solarThrottlingAverageMW, // "太陽光抑制量"
+      windOutputAverageMW, // "風力実績"
+      windThrottlingAverageMW, // "風力抑制量"
+      pumpedStorageAverageMW, // "揚水"
+      batteryStorageAverageMW, // "蓄電池"
+      interconnectorsAverageMW, // "連系線"
+      otherAverageMW, // "その他"
+      totalAverageMW, // "供給力合計"
+    ] = row;
+    const fromUTC = DateTime.fromFormat(
+      `${date.trim()} ${time.trim().split("～")[0]}`,
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
@@ -215,7 +320,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
 export const getHepcoAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  const allUrls = await getCSVUrlsFromPage(
+  const historicUrls = await getCSVUrlsFromPage(
     CSV_URL,
     // RegExp(/(.csv)|(.xls)$/),
     RegExp(/(.csv)$/),
@@ -224,20 +329,24 @@ export const getHepcoAreaData = async (
 
   // e.g. https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/csv/sup_dem_results_2023_4q.csv
   // Note, one of the old files is an XLS file
-  const oldUrls = allUrls
+  const oldUrls = historicUrls
     .filter((url) => url.includes("sup_dem_results"))
     .map((url) => ({ url, format: "old" }));
   // e.g. https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/csv/eria_jukyu_202404_01.csv
-  const newUrls = allUrls
+  const newUrls = historicUrls
     .filter((url) => url.includes("eria_jukyu"))
     .map((url) => ({ url, format: "new" }));
 
+  const liveUrls = (await getLiveCSVUrls()).map((url) => ({
+    url,
+    format: "new",
+  }));
+
   const urlsToDownload = (() => {
-    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
-    if (scrapeType === ScrapeType.New) return [...newUrls];
-    // Sort so that the latest file is last
-    if (scrapeType === ScrapeType.Latest)
-      return [newUrls.sort()[newUrls.length - 1]];
+    if (scrapeType === ScrapeType.All)
+      return [...oldUrls, ...newUrls, ...liveUrls];
+    if (scrapeType === ScrapeType.New) return [...newUrls, ...liveUrls];
+    if (scrapeType === ScrapeType.Latest) return [...liveUrls];
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
@@ -257,10 +366,15 @@ export const getHepcoAreaData = async (
                 parser: parseOldCSV,
                 ...OLD_CSV_FORMAT,
               }
-          : {
-              parser: parseNewCSV,
-              ...NEW_CSV_FORMAT,
-            };
+          : url.includes("sup_dem_results")
+            ? {
+                parser: parseNewCSV,
+                ...NEW_CSV_FORMAT,
+              }
+            : {
+                parser: parseLatestCSV,
+                ...LATEST_CSV_FORMAT,
+              };
 
       logger.debug({ downloading: url });
 
