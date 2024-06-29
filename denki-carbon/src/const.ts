@@ -66,6 +66,7 @@ export enum GenerationSource {
 export const DECIMAL_PLACES = 3;
 
 export const SUPPORTED_TSOS = [
+  JapanTsoName.HEPCO,
   JapanTsoName.TOHOKU,
   JapanTsoName.TEPCO,
   JapanTsoName.CHUBU,

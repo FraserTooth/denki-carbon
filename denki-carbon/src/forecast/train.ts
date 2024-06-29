@@ -9,6 +9,14 @@ import { TrainingData } from "./types";
 import { getModelName } from "./utils";
 import { logger } from "../utils";
 
+// For each TSO, when the new carbon intensity data starts
+const startDatesByTso: Partial<Record<JapanTsoName, DateTime>> = {
+  [JapanTsoName.HEPCO]: DateTime.fromISO("2024-04-01T00:00:00.000+09:00"),
+  [JapanTsoName.TOHOKU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
+  [JapanTsoName.TEPCO]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
+  [JapanTsoName.CHUBU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
+};
+
 export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
   const benchmarkStart = DateTime.now();
 
@@ -18,7 +26,10 @@ export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {
   const predictionWindow = 6;
 
   // From the start of the 30min
-  const startOfTrainingData = DateTime.fromISO("2024-02-01T00:00:00.000+09:00");
+  const startOfTrainingData = startDatesByTso[tso];
+  if (!startOfTrainingData) {
+    throw new Error("No start date found for TSO");
+  }
 
   const getBlockInDay = (datetime: Date): number => {
     return datetime.getHours() * 2 + Math.floor(datetime.getMinutes() / 30);
