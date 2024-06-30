@@ -14,6 +14,7 @@ import { logger, conflictUpdateAllExcept, axiosInstance } from "../utils";
 import * as yauzlp from "yauzl-promise";
 import { getHepcoAreaData } from "./hepco";
 import xlsx from "node-xlsx";
+import { getChugokuAreaData } from "./chugoku";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -262,6 +263,8 @@ export const scrapeTso = async (
       return getChubuAreaData(scrapeType);
     } else if (utility === JapanTsoName.HEPCO) {
       return getHepcoAreaData(scrapeType);
+    } else if (utility === JapanTsoName.CHUGOKU) {
+      return getChugokuAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
