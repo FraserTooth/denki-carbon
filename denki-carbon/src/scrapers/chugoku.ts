@@ -22,7 +22,8 @@ const NEW_CSV_FORMAT = {
 };
 
 const START_OF_CHUBU_LIVE_DATA = DateTime.fromISO(
-  "2024-02-01T00:00:00.000+09:00"
+  "2024-02-01T00:00:00.000+09:00",
+  { zone: "Asia/Tokyo" }
 );
 
 /**
