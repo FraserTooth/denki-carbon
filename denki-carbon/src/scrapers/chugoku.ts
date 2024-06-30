@@ -5,6 +5,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { logger } from "../utils";
 
 const OLD_CSV_URL = "https://www.energia.co.jp/nw/service/retailer/data/area/";
+const BASE_LIVE_CSV_URL = "https://www.energia.co.jp/nw/jukyuu";
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
@@ -21,49 +22,38 @@ const NEW_CSV_FORMAT = {
 };
 
 /**
- * Construct URLs for real-time CSV files
- * There should be a file available for every day in the previous month and current month
- *
- * Format is e.g. https://setsuden.nw.tohoku-epco.co.jp/common/demand/realtime_jukyu/realtime_jukyu_20240603_02.csv
- *
- * @returns URLs for real-time CSV files
+ * Chugokus's live CSV page (https://www.energia.co.jp/nw/jukyuu/eria_jukyu.html) doesn't really
+ * show what CSVs are available, instead, every time you change the date in the box, it literally
+ * sends a GET request for the file.
+ * So, this function will basically jsut do the same thing, but without bothering to check the page
  */
-const getRealTimeCSVUrls = (
-  newCsvUrlsMonthlyConfirmedSeen: string[]
-): string[] => {
-  // Get datestrings from the URLs we've already seen
-  const dateStrings = newCsvUrlsMonthlyConfirmedSeen.map(
-    (url) =>
-      // Format _yyyyMM_
-      url.match(/_\d\d\d\d\d\d_/)?.[0]
-  );
-  // Remove underscores and get month as number
-  const months = dateStrings.map((dateString) =>
-    Number(dateString?.replaceAll("_", "").slice(4, 6))
+const getChubuCSVUrls = async (): Promise<
+  {
+    url: string;
+    format: "old" | "new";
+  }[]
+> => {
+  const startOfChubuLiveData = DateTime.fromISO(
+    "2024-02-01T00:00:00.000+09:00"
   );
   const nowJST = DateTime.now().setZone("Asia/Tokyo");
-  const lastMonth = nowJST.minus({ months: 1 }).month;
-
-  // Start with the the previous month if we haven't seen any URLs for it
-  const startOfStartingMonth = months.includes(lastMonth)
-    ? nowJST.startOf("month")
-    : nowJST.minus({ months: 1 }).startOf("month");
-
-  const today = nowJST;
-  const urls = [];
+  const startOfCurrentMonth = nowJST.startOf("month");
+  const urls: { url: string; format: "old" | "new" }[] = [];
+  // From the start of data to the start of the current month, return a url for each month
   for (
-    let date = startOfStartingMonth;
-    date <= today;
-    date = date.plus({ days: 1 })
+    let urlMonth = startOfChubuLiveData;
+    urlMonth.month <= startOfCurrentMonth.month;
+    urlMonth = urlMonth.plus({ months: 1 })
   ) {
-    const dateString = date.toFormat("yyyyMMdd");
-    urls.push(
-      `https://setsuden.nw.tohoku-epco.co.jp/common/demand/realtime_jukyu/realtime_jukyu_${dateString}_02.csv`
-    );
+    // e.g. https://www.energia.co.jp/nw/jukyuu/sys/eria_jukyu_202404_07.csv?ver=1719750310860
+    const url = `${BASE_LIVE_CSV_URL}/sys/eria_jukyu_${urlMonth.toFormat(
+      "yyyyMM"
+    )}_07.csv?ver=${nowJST.toMillis()}`;
+    urls.push({ url, format: "new" });
   }
+
   return urls;
 };
-
 const parseDpToKwh = (raw: string): number => {
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
@@ -207,30 +197,17 @@ export const getChugokuAreaData = async (
   );
   const oldUrls = oldCsvUrls.map((url) => ({ url, format: "old" }));
 
-  // const newCsvUrlsMonthlyConfirmed = await getCSVUrlsFromPage(
-  //   CSV_URL,
-  //   // e.g. common/demand/eria_jukyu_202404_02.csv
-  //   RegExp(/eria_jukyu_\d\d\d\d\d\d_\d\d.csv$/),
-  //   "https://setsuden.nw.tohoku-epco.co.jp/"
-  // );
-  // const newUrls = newCsvUrlsMonthlyConfirmed.map((url) => ({
-  //   url,
-  //   format: "new",
-  // }));
+  const newUrls = await getChubuCSVUrls();
 
-  // const newCsvUrlsDaily = getRealTimeCSVUrls(newCsvUrlsMonthlyConfirmed);
-  // const newUrlsDaily = newCsvUrlsDaily.map((url) => ({ url, format: "new" }));
-
-  // const urlsToDownload = (() => {
-  //   if (scrapeType === ScrapeType.All)
-  //     return [...oldUrls, ...newUrls, ...newUrlsDaily];
-  //   if (scrapeType === ScrapeType.New) return [...newUrls, ...newUrlsDaily];
-  //   if (scrapeType === ScrapeType.Latest) return [...newUrlsDaily];
-  //   throw new Error(`Invalid scrape type: ${scrapeType}`);
-  // })();
-  // logger.debug({ urlsToDownload: urlsToDownload });
-
-  const urlsToDownload = [...oldUrls];
+  const urlsToDownload = (() => {
+    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
+    if (scrapeType === ScrapeType.New) return [...newUrls];
+    // Just most recent data, sorted by url
+    if (scrapeType === ScrapeType.Latest)
+      return [...newUrls.sort((a, b) => (a.url > b.url ? 1 : -1)).slice(-1)];
+    throw new Error(`Invalid scrape type: ${scrapeType}`);
+  })();
+  logger.debug({ urlsToDownload: urlsToDownload });
 
   const dataByCSV = await Promise.all(
     urlsToDownload.map(async (file) => {
@@ -255,7 +232,7 @@ export const getChugokuAreaData = async (
         days: data.length / blocksInDay,
       });
       return {
-        tso: JapanTsoName.TOHOKU,
+        tso: JapanTsoName.CHUGOKU,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,
