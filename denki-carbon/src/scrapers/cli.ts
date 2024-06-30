@@ -39,8 +39,11 @@ program
     }) => {
       const { tso, scrape: scrapeType, predict } = options;
       const tsoToScrape = tso === "all" ? SUPPORTED_TSOS : [tso];
-      logger.info(`Running scraper from CLI for ${tso}...`);
+      logger.info(
+        `Running scraper from CLI for ${tso} for ${scrapeType} readings.`
+      );
       await scrapeJob(tsoToScrape, scrapeType, predict);
+      logger.info(`CLI Scraping job for ${tso} complete.`);
       exit(0);
     }
   );

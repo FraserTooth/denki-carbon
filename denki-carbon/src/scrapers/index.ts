@@ -15,6 +15,8 @@ import * as yauzlp from "yauzl-promise";
 import { getHepcoAreaData } from "./hepco";
 import xlsx from "node-xlsx";
 import { getChugokuAreaData } from "./chugoku";
+import { AxiosError } from "axios";
+import { log } from "@tensorflow/tfjs-node";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -51,9 +53,18 @@ export const downloadCSV = async (
   encoding: string,
   attempt: number = 1
 ): Promise<string[][]> => {
-  const response = await axiosInstance.get(url, {
-    responseType: "arraybuffer",
-  });
+  const response = await (async () => {
+    try {
+      return axiosInstance.get(url, {
+        responseType: "arraybuffer",
+      });
+    } catch (e) {
+      const error = e as AxiosError;
+      logger.error(`Error downloading ${url}: ${error.message}, ${error.code}`);
+      logger.error("Error response:", error.response?.data);
+      throw e;
+    }
+  })();
   const dataResponse = await response.data;
 
   // If buffer is empty, retry up to 3 times
@@ -269,9 +280,12 @@ export const scrapeTso = async (
     throw new Error(`Utility ${utility} not supported`);
   })();
 
+  logger.debug(`Scraped ${files.length} files for ${utility}`);
+
   let newRowsTotal = 0;
   let latestDatetimeSavedOfAllFiles: DateTime | undefined;
   for (const file of files) {
+    logger.debug(`Saving file: ${file.url}`);
     const { newRows, latestDatetimeSaved } = await saveAreaDataFile(file);
     newRowsTotal += newRows;
     if (

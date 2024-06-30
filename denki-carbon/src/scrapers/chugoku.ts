@@ -251,5 +251,14 @@ export const getChugokuAreaData = async (
     })
   );
 
+  logger.debug("All files retrieved", {
+    data: dataByCSV.map((d) => ({
+      fromDatetime: d.fromDatetime,
+      toDatetime: d.toDatetime,
+      rows: d.data.length,
+      url: d.url,
+    })),
+  });
+
   return dataByCSV;
 };
