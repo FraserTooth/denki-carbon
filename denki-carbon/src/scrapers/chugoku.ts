@@ -21,6 +21,10 @@ const NEW_CSV_FORMAT = {
   intervalMinutes: 30,
 };
 
+const START_OF_CHUBU_LIVE_DATA = DateTime.fromISO(
+  "2024-02-01T00:00:00.000+09:00"
+);
+
 /**
  * Chugokus's live CSV page (https://www.energia.co.jp/nw/jukyuu/eria_jukyu.html) doesn't really
  * show what CSVs are available, instead, every time you change the date in the box, it literally
@@ -33,15 +37,12 @@ const getChubuCSVUrls = async (): Promise<
     format: "old" | "new";
   }[]
 > => {
-  const startOfChubuLiveData = DateTime.fromISO(
-    "2024-02-01T00:00:00.000+09:00"
-  );
   const nowJST = DateTime.now().setZone("Asia/Tokyo");
   const startOfCurrentMonth = nowJST.startOf("month");
   const urls: { url: string; format: "old" | "new" }[] = [];
   // From the start of data to the start of the current month, return a url for each month
   for (
-    let urlMonth = startOfChubuLiveData;
+    let urlMonth = START_OF_CHUBU_LIVE_DATA;
     urlMonth.month <= startOfCurrentMonth.month;
     urlMonth = urlMonth.plus({ months: 1 })
   ) {
@@ -114,7 +115,15 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       interconnectorskWh: parseDpToKwh(interconnectorsMWh),
     };
   });
-  return data;
+
+  // Filter out anything before the start of the live data, if the file is from 2023
+  // This is because there is an overlap between the old and new formats, and we should only keep one
+  const filteredData =
+    data[0].fromUTC.year === 2023
+      ? data.filter((dp) => dp.fromUTC < START_OF_CHUBU_LIVE_DATA)
+      : data;
+
+  return filteredData;
 };
 
 const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
