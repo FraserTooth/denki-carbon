@@ -38,7 +38,7 @@ const utilityGeocoordinates = {
     latitude: 36.695917,
     longitude: 137.213694,
   },
-  cepco: {
+  chugoku: {
     latitude: 34.383333,
     longitude: 132.45,
   },
