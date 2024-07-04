@@ -57,6 +57,8 @@ const getChubuCSVUrls = async (): Promise<
   return urls;
 };
 const parseDpToKwh = (raw: string): number => {
+  // Return 0 for placeholder values
+  if (raw === "－") return 0;
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;

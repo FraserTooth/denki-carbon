@@ -173,15 +173,25 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         logger.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
         throw new Error("Invalid date or time");
       }
-      // Not the only column that can be invalid, but would indicate a problem
-      if (!isFinite(row.totalDemandkWh)) {
-        logger.error(
-          `Invalid in row #${rowIndex} in ${file.url}:`,
-          JSON.stringify(row)
-        );
-        logger.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
-        throw new Error("Invalid totalDemandkWh");
-      }
+      // Values that must be finite
+      const valuesToCheck = [
+        row.totalDemandkWh,
+        row.solarThrottlingkWh,
+        row.windThrottlingkWh,
+      ];
+      valuesToCheck.forEach((value) => {
+        if (!isFinite(value)) {
+          logger.error(
+            `Invalid data in row #${rowIndex} in ${file.url}: ${JSON.stringify(row)}`,
+            row
+          );
+          logger.error(
+            `rawRow: ${JSON.stringify(file.raw[rowIndex])}`,
+            JSON.stringify(file.raw[rowIndex])
+          );
+          throw new Error("Invalid data");
+        }
+      });
       return {
         dataId: [file.tso, dateStringJST, timeFromStringJST].join("_"),
         tso: file.tso,
