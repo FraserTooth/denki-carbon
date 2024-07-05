@@ -37,6 +37,9 @@ export default function Main() {
   // Utility Choice
   const [utility, setUtility] = useState(supportedUtilities[2]); // Default to TEPCO, TODO: swap to Enum
 
+  // Date Choice
+  const [graphDate, setGraphDate] = useState<string>("now"); // Default to the string "now"
+
   // API Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
     intensity.denkiCarbon.default
@@ -85,7 +88,11 @@ export default function Main() {
             <Typography style={{ display: "inline-block" }}>
               gCO₂/kWh
             </Typography>
-            <Graph intensityData={carbonIntensityData} />
+            <Graph
+              intensityData={carbonIntensityData}
+              setGraphDate={setGraphDate}
+              graphDate={graphDate}
+            />
           </div>
         )}
         <Social carbonIntensity={displayCarbonIntensityNow} utility={utility} />

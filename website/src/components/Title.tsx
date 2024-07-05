@@ -2,12 +2,9 @@ import React, { useState, useEffect } from "react";
 import LocationUtils from "./api/location";
 import { useTranslation, Trans } from "react-i18next";
 
-import {
-  Typography,
-  NativeSelect,
-} from "@material-ui/core";
+import { Typography, NativeSelect } from "@material-ui/core";
 
-
+// TODO: define props properly
 export default function Title(props: any) {
   const { t } = useTranslation();
 
@@ -21,7 +18,6 @@ export default function Title(props: any) {
   useEffect(() => {
     setUtilityChoice(props.utilityIndex);
   }, [props.utilityIndex]);
-
 
   const handleChange = (
     event: React.ChangeEvent<{ name?: string; value: string }>

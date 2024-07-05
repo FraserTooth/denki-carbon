@@ -1,4 +1,5 @@
 {
+  "today": "Today",
   "theCarbonIs": "The CO₂ emitted from Electricity Generation supplied by <utilityMenu></utilityMenu> right now is forecasted as:",
   "months": [
     "January",
@@ -56,7 +57,7 @@
     "targetLine": "2030 Target",
     "averageUKLine": "UK Average 2020"
   },
-  "carbonGraphTitle": "Today's Carbon Intensity with Forecast",
+  "carbonGraphTitle": "Carbon Intensity with Forecast for <dateSelect></dateSelect>",
   "explanation": {
     "whatSection": {
       "title": "So what?",

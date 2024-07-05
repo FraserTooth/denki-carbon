@@ -12,6 +12,8 @@ import {
 } from "@material-ui/core";
 
 import { useTranslation } from "react-i18next";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
 
 const useStyles = makeStyles({
   copyright: {
@@ -45,19 +47,21 @@ function App() {
   const classes = useStyles();
   const { i18n } = useTranslation();
   return (
-    <Container>
-      <Box className={classes.languageSelect}>
-        <Button size="small" onClick={() => i18n.changeLanguage("ja")}>
-          日本語
-        </Button>
-        |
-        <Button size="small" onClick={() => i18n.changeLanguage("en")}>
-          EN
-        </Button>
-      </Box>
-      <Main />
-      <Copyright />
-    </Container>
+    <LocalizationProvider dateAdapter={AdapterLuxon}>
+      <Container>
+        <Box className={classes.languageSelect}>
+          <Button size="small" onClick={() => i18n.changeLanguage("ja")}>
+            日本語
+          </Button>
+          |
+          <Button size="small" onClick={() => i18n.changeLanguage("en")}>
+            EN
+          </Button>
+        </Box>
+        <Main />
+        <Copyright />
+      </Container>
+    </LocalizationProvider>
   );
 }
 

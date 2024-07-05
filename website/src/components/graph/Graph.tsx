@@ -24,6 +24,7 @@ import CustomTooltip, { timeFormatter } from "./Tooltip";
 
 import { Trans, useTranslation } from "react-i18next";
 import { DateTime } from "luxon";
+import DateSelect from "./DateSelect";
 
 const useStyles = makeStyles({
   graphCard: {
@@ -36,6 +37,8 @@ const INDUSTRY_TARGET_2030 = 370;
 const UK_AVERAGE_2020 = 181;
 
 interface GraphProps {
+  graphDate: string;
+  setGraphDate: React.Dispatch<React.SetStateAction<string>>;
   intensityData: DenkiCarbonGetAreaDataElement[];
 }
 
@@ -202,7 +205,10 @@ export default function Graph(props: GraphProps) {
   return (
     <Card className={classes.graphCard}>
       <Typography variant="h6" align="center">
-        <Trans i18nKey="carbonGraphTitle" />
+        <Trans
+          i18nKey="carbonGraphTitle"
+          components={{ dateSelect: <DateSelect /> }}
+        />
       </Typography>
       <br />
       {renderLineChart}
