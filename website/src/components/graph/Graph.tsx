@@ -37,8 +37,8 @@ const INDUSTRY_TARGET_2030 = 370;
 const UK_AVERAGE_2020 = 181;
 
 interface GraphProps {
-  graphDate: string;
-  setGraphDate: React.Dispatch<React.SetStateAction<string>>;
+  graphDate: DateTime | null;
+  setGraphDate: React.Dispatch<React.SetStateAction<DateTime | null>>;
   intensityData: DenkiCarbonGetAreaDataElement[];
 }
 
@@ -207,7 +207,14 @@ export default function Graph(props: GraphProps) {
       <Typography variant="h6" align="center">
         <Trans
           i18nKey="carbonGraphTitle"
-          components={{ dateSelect: <DateSelect /> }}
+          components={{
+            dateSelect: (
+              <DateSelect
+                graphDate={props.graphDate}
+                setGraphDate={props.setGraphDate}
+              />
+            ),
+          }}
         />
       </Typography>
       <br />

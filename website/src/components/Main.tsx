@@ -38,29 +38,63 @@ export default function Main() {
   const [utility, setUtility] = useState(supportedUtilities[2]); // Default to TEPCO, TODO: swap to Enum
 
   // Date Choice
-  const [graphDate, setGraphDate] = useState<string>("now"); // Default to the string "now"
+  const [graphDate, setGraphDate] = useState<DateTime | null>(null);
+
+  // Store Carbon Intensity Now
+  const [carbonIntensityNow, setCarbonIntensityNow] = useState<number>(0);
 
   // API Data
   const [carbonIntensityData, setCarbonIntensityData] = useState(
     intensity.denkiCarbon.default
   );
+
+  // Changes to be made when utility is updated
   useEffect(() => {
+    // Reset the graph date
+    setGraphDate(null);
+    // Reset the carbon intensity
+    setCarbonIntensityNow(0);
+    // Fetch new data
     intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
       tso: utility,
       from: oneDayAgo.toISO() ?? "",
       to: predictionLimit.toISO() ?? "",
-      includeForecast: true,
+      includeForecast: graphDate === null ? true : false,
     });
   }, [utility]);
 
-  const rawCarbonIntensityNow =
-    carbonIntensityData.find((dp) => {
-      return dp.datetimeFrom.valueOf() === startOfLatestHalfHour.valueOf();
-    })?.predictedCarbonIntensity ?? 0;
-  console.log(
-    `The current Carbon Intensity is ${rawCarbonIntensityNow}gC02/kWh`
-  );
-  const displayCarbonIntensityNow = Math.round(rawCarbonIntensityNow);
+  // Changes to be made when graphDate is updated
+  useEffect(() => {
+    const from = graphDate === null ? oneDayAgo : graphDate;
+    const to =
+      graphDate === null
+        ? predictionLimit
+        : from.plus({ hours: 23, minutes: 59 }); // Not quite 24 hours, to avoid next day's block
+    console.log(
+      `Fetching Carbon Intensity Data for ${utility} from ${from} to ${to}`
+    );
+
+    intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
+      tso: utility,
+      from: from.toISO() ?? "",
+      to: to.toISO() ?? "",
+      includeForecast: graphDate === null ? true : false,
+    });
+  }, [graphDate]);
+
+  // Changes to be made when data is updated
+  useEffect(() => {
+    if (graphDate === null) {
+      const rawCarbonIntensityNow =
+        carbonIntensityData.find((dp) => {
+          return dp.datetimeFrom.valueOf() === startOfLatestHalfHour.valueOf();
+        })?.predictedCarbonIntensity ?? 0;
+      console.log(
+        `The current Carbon Intensity is ${rawCarbonIntensityNow}gC02/kWh`
+      );
+      setCarbonIntensityNow(Math.round(rawCarbonIntensityNow));
+    }
+  }, [carbonIntensityData]);
 
   return (
     <Container maxWidth="sm">
@@ -70,7 +104,7 @@ export default function Main() {
           utilityIndex={supportedUtilities.indexOf(utility)}
           supportedUtilities={supportedUtilities}
         />
-        {displayCarbonIntensityNow === 0 ? (
+        {carbonIntensityNow === 0 ? (
           <CircularProgress />
         ) : (
           <div>
@@ -80,10 +114,10 @@ export default function Main() {
               gutterBottom
               style={{
                 display: "inline-block",
-                color: carbonIntensityColor(displayCarbonIntensityNow),
+                color: carbonIntensityColor(carbonIntensityNow),
               }}
             >
-              {displayCarbonIntensityNow}
+              {carbonIntensityNow}
             </Typography>
             <Typography style={{ display: "inline-block" }}>
               gCO₂/kWh
@@ -95,7 +129,7 @@ export default function Main() {
             />
           </div>
         )}
-        <Social carbonIntensity={displayCarbonIntensityNow} utility={utility} />
+        <Social carbonIntensity={carbonIntensityNow} utility={utility} />
         <Divider variant="middle" />
         <Explanation />
       </Box>

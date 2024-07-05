@@ -69,14 +69,22 @@ function ButtonDatePicker(
   );
 }
 
-export default function PickerWithButtonField() {
-  const [value, setValue] = React.useState<DateTime | null>(null);
+interface PickerWithButtonFieldProps {
+  graphDate: DateTime | null;
+  setGraphDate: React.Dispatch<React.SetStateAction<DateTime | null>>;
+}
 
+export default function PickerWithButtonField(
+  props: PickerWithButtonFieldProps
+) {
+  const { graphDate, setGraphDate } = props;
   return (
     <ButtonDatePicker
-      label={value == null ? null : value.toFormat("yyyy/MM/dd")}
-      value={value}
-      onChange={(newValue) => setValue(newValue)}
+      label={graphDate == null ? null : graphDate.toFormat("yyyy/MM/dd")}
+      value={graphDate}
+      onChange={(newValue) =>
+        setGraphDate(newValue?.setZone("Asia/Tokyo") || null)
+      }
     />
   );
 }

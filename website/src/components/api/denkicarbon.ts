@@ -55,7 +55,7 @@ const defaultDenkiCarbonGetAreaData: DenkiCarbonGetAreaDataElement[] = [
  */
 const createCache = <StoredDataType>() => {
   type Cache = {
-    [K in Utilities]?: StoredDataType;
+    [K in string]?: StoredDataType;
   };
 
   const cache: Cache = {};
@@ -66,8 +66,8 @@ const createCache = <StoredDataType>() => {
    * @param utility Utility Name
    * @returns Cached Data
    */
-  const getCache = (utility: Utilities): StoredDataType | undefined =>
-    cache[utility];
+  const getCache = (paramString: string): StoredDataType | undefined =>
+    cache[paramString];
 
   /**
    * Sets Cache Data for Utility
@@ -75,8 +75,8 @@ const createCache = <StoredDataType>() => {
    * @param utility Utility Name
    * @param data Cached Data
    */
-  const setCache = (utility: Utilities, data: StoredDataType): void => {
-    cache[utility] = data;
+  const setCache = (paramString: string, data: StoredDataType): void => {
+    cache[paramString] = data;
   };
   return { getCache, setCache };
 };
@@ -106,9 +106,11 @@ function createAPIInterface<DataType, Params>(
   ): Promise<void> => {
     setData(defaultData);
 
-    const cacheData = cache.getCache(utility);
+    const paramString = JSON.stringify(params);
+
+    const cacheData = cache.getCache(paramString);
     if (cacheData) {
-      console.log(`Got ${endpointPath} for ${utility} from Local Cache`);
+      console.log(`Got ${endpointPath} for ${paramString} from Local Cache`);
       return setData(cacheData);
     }
 
@@ -128,7 +130,7 @@ function createAPIInterface<DataType, Params>(
 
     const data: DataType = unpacker(result);
 
-    cache.setCache(utility, data);
+    cache.setCache(paramString, data);
     setData(data);
   };
   return callAPI;
@@ -141,7 +143,9 @@ const retriveDataDenkiCarbon = createAPIInterface<
   defaultDenkiCarbonGetAreaData,
   (raw: { historic: any; forecast: any }): DenkiCarbonGetAreaDataElement[] => {
     // TODO: set up a better validator
-    return [...raw.historic, ...raw.forecast].map((element) => ({
+    console.log("Raw Data: ", raw);
+    const forecast = raw?.forecast ? raw.forecast : [];
+    return [...raw.historic, ...forecast].map((element) => ({
       ...element,
       datetimeFrom: DateTime.fromISO(element.datetimeFrom),
       datetimeTo: DateTime.fromISO(element.datetimeTo),
