@@ -65,6 +65,22 @@ function ButtonDatePicker(
       onClose={() => setOpen(false)}
       onOpen={() => setOpen(true)}
       disableFuture={true}
+      // Disable dates before April 1, 2016, JST
+      shouldDisableDate={(datetime) =>
+        datetime.valueOf() <
+        DateTime.fromObject(
+          {
+            year: 2016,
+            month: 4,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0,
+          },
+          { zone: "Asia/Tokyo" }
+        ).valueOf()
+      }
     />
   );
 }
