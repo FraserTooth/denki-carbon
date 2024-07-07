@@ -61,15 +61,17 @@ export const conflictUpdateAllExcept = <
 export const axiosInstance = axios.create({
   timeout: 5000,
   headers: {
-    Accept: "application/json",
+    Accept:
+      "application/json, text/csv, application/vnd.ms-excel, application/zip",
     "Content-Type": "application/json",
   },
   beforeRedirect(options, responseDetails) {
     logger.warn(
-      `Redirecting from ${responseDetails.headers} to ${options.url}...`
+      `Redirecting from ${JSON.stringify(responseDetails.headers)} to ${options.url}...`
     );
   },
 });
+
 axiosRetry(axiosInstance, {
   retries: 5,
   retryDelay: axiosRetry.exponentialDelay,
@@ -78,7 +80,9 @@ axiosRetry(axiosInstance, {
     logger.warn(`${error.message} to ${error?.config?.url}`);
     // logger.debug(error);
     return (
-      isNetworkOrIdempotentRequestError(error) || error.code === "ECONNABORTED"
+      isNetworkOrIdempotentRequestError(error) ||
+      error.code === "ECONNABORTED" ||
+      error.code === "ERR_CANCELED"
     );
   },
   onRetry(retryCount, _error, requestConfig) {
@@ -86,9 +90,13 @@ axiosRetry(axiosInstance, {
       `Retrying request to ${requestConfig.url} (retry #${retryCount})`
     );
     requestConfig.headers = {
-      Accept: "application/json",
+      Accept:
+        "application/json, text/csv, application/vnd.ms-excel, application/zip",
       "Content-Type": "application/json",
     };
+    // Reset abort signal, increasing timeout
+    const newAbortSignal = AbortSignal.timeout(1000 * retryCount);
+    requestConfig.signal = newAbortSignal;
   },
   onMaxRetryTimesExceeded(error, retryCount) {
     logger.error(

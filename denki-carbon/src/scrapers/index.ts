@@ -16,7 +16,7 @@ import { getHepcoAreaData } from "./hepco";
 import xlsx from "node-xlsx";
 import { getChugokuAreaData } from "./chugoku";
 import { AxiosError } from "axios";
-import { log } from "@tensorflow/tfjs-node";
+import { getHokudenAreaData } from "./hokuden";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -55,8 +55,15 @@ export const downloadCSV = async (
 ): Promise<string[][]> => {
   const response = await (async () => {
     try {
-      return axiosInstance.get(url, {
+      // Add abort signal to handle connection issues
+      const abortSignal = AbortSignal.timeout(1000);
+      return await axiosInstance.get(url, {
         responseType: "arraybuffer",
+        headers: {
+          "Content-Type": "text/csv",
+          "Content-Disposition": "attachment; filename=data.csv",
+        },
+        signal: abortSignal,
       });
     } catch (e) {
       const error = e as AxiosError;
@@ -286,6 +293,8 @@ export const scrapeTso = async (
       return getHepcoAreaData(scrapeType);
     } else if (utility === JapanTsoName.CHUGOKU) {
       return getChugokuAreaData(scrapeType);
+    } else if (utility === JapanTsoName.HOKUDEN) {
+      return getHokudenAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
