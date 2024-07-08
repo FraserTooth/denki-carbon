@@ -15,7 +15,7 @@ const startDatesByTso: Partial<Record<JapanTsoName, DateTime>> = {
   [JapanTsoName.TOHOKU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
   [JapanTsoName.TEPCO]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
   [JapanTsoName.CHUBU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
-  // HOKUDEN
+  [JapanTsoName.HOKUDEN]: DateTime.fromISO("2024-03-26T00:00:00.000+09:00"),
   // KEPCO
   [JapanTsoName.CHUGOKU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
   // YONDEN

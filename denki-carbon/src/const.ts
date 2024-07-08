@@ -70,7 +70,7 @@ export const SUPPORTED_TSOS = [
   JapanTsoName.TOHOKU,
   JapanTsoName.TEPCO,
   JapanTsoName.CHUBU,
-  // JapanTsoName.HOKUDEN,
+  JapanTsoName.HOKUDEN,
   // JapanTsoName.KEPCO,
   JapanTsoName.CHUGOKU,
   // JapanTsoName.YONDEN,
