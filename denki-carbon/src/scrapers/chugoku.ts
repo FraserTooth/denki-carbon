@@ -56,6 +56,7 @@ const getChubuCSVUrls = async (): Promise<
 
   return urls;
 };
+
 const parseDpToKwh = (raw: string): number => {
   // Return 0 for placeholder values
   if (raw === "－") return 0;

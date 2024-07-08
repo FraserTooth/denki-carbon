@@ -5,6 +5,7 @@ import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { logger } from "../utils";
 
 const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
+const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
@@ -27,9 +28,43 @@ const NEW_CSV_FORMAT = {
   intervalMinutes: 30,
 };
 
+const START_OF_HOKUDEN_LIVE_DATA = DateTime.fromISO(
+  "2024-03-26T00:00:00.000+09:00",
+  { zone: "Asia/Tokyo" }
+);
+
+/**
+ * Rikuden's live CSV page (https://www.rikuden.co.jp/nw/denki-yoho/results_jyukyu.html) doesn't
+ * show what CSVs are available, and instead populates a form with disabled/enabled options for the months and years.
+ * So, this function will basically create all possible URLs for the months up to the current month
+ */
+const getHokudenNewCSVUrls = async (): Promise<
+  {
+    url: string;
+    format: "old" | "new";
+  }[]
+> => {
+  const nowJST = DateTime.now().setZone("Asia/Tokyo");
+  const startOfCurrentMonth = nowJST.startOf("month");
+  const urls: { url: string; format: "old" | "new" }[] = [];
+  // From the start of data to the start of the current month, return a url for each month
+  for (
+    let urlMonth = START_OF_HOKUDEN_LIVE_DATA;
+    urlMonth.month <= startOfCurrentMonth.month;
+    urlMonth = urlMonth.plus({ months: 1 })
+  ) {
+    // e.g. https://www.rikuden.co.jp/nw/denki-yoho/csv/eria_jukyu_202402_05.csv
+    const url = `${BASE_LIVE_CSV_URL}/eria_jukyu_${urlMonth.toFormat("yyyyMM")}_05.csv`;
+    urls.push({ url, format: "new" });
+  }
+
+  return urls;
+};
+
 const parseDpToKwh = (raw: string): number => {
   // Return 0 for placeholder values
-  if (raw === "－") return 0;
+  const placeholders = ["－", ""];
+  if (placeholders.includes(raw)) return 0;
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
@@ -87,7 +122,15 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
     };
   });
-  return data;
+
+  // Filter out anything before the start of the live data, if the file is from 2024
+  // This is because there is an overlap between the old and new formats, and we should only keep one
+  const filteredData =
+    data[0].fromUTC.year === 2024
+      ? data.filter((dp) => dp.fromUTC < START_OF_HOKUDEN_LIVE_DATA)
+      : data;
+
+  return filteredData;
 };
 
 const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
@@ -170,12 +213,14 @@ export const getHokudenAreaData = async (
     .map((url) => ({ url, format: "old" }))
     .sort((a, b) => a.url.localeCompare(b.url));
 
+  const newUrls = await getHokudenNewCSVUrls();
+
   const urlsToDownload = (() => {
-    if (scrapeType === ScrapeType.All) return [...oldUrls];
-    // if (scrapeType === ScrapeType.New) return [...newUrls];
-    // // Sort so that the latest file is last
-    // if (scrapeType === ScrapeType.Latest)
-    //   return [newUrls.sort()[newUrls.length - 1]];
+    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
+    if (scrapeType === ScrapeType.New) return [...newUrls];
+    // Sort so that the latest file is last
+    if (scrapeType === ScrapeType.Latest)
+      return [newUrls.sort()[newUrls.length - 1]];
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
