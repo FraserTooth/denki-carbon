@@ -34,7 +34,7 @@ const utilityGeocoordinates = {
     latitude: 43.066667,
     longitude: 141.35,
   },
-  rikuden: {
+  hokuden: {
     latitude: 36.695917,
     longitude: 137.213694,
   },

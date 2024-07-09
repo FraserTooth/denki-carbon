@@ -12,9 +12,8 @@ Its built mostly using `React` in `Typescript` but also uses `Recharts` & `i18ne
 - Fork the Project
 - Clone Locally
 - `bun install`
-- Add a `.env` file to your project root with:
-  - REACT_APP_API_URL=`https://us-central1-japan-grid-carbon-api<ENVIRONMENT>.cloudfunctions.net/api/v0.1`
-    - Environment is nothing for Production, `-staging` for Staging
+- Add a `.env` file to your project root, copy the `.env.example` file
+  - If you want to test against a local version of the API, use `http://localhost:3000` instead
 - Make and commit your changes
 - Open a PR to the master branch of this repo with a detailed explanation of your work (inc. screenshots)
 - Guidelines in [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -25,6 +24,7 @@ Its built mostly using `React` in `Typescript` but also uses `Recharts` & `i18ne
 
 ### 🌏 Environments
 
-- 🧼 Staging - [staging.denkicarbon.jp](https://staging.denkicarbon.jp/) - Branch: `master`
-- 💪 Production - [denkicarbon.jp](https://denkicarbon.jp/) - Branch: `production`
-- _(every PR will create a [Preview Deployment](https://vercel.com/docs/platform/deployments#preview), which will have a unique URL and use the staging API)_
+<!-- - 🧼 Staging - [staging.denkicarbon.jp](https://staging.denkicarbon.jp/) - Branch: `master` -->
+
+- 💪 Production - [denkicarbon.jp](https://denkicarbon.jp/)
+<!-- - _(every PR will create a [Preview Deployment](https://vercel.com/docs/platform/deployments#preview), which will have a unique URL and use the staging API)_ -->

@@ -9,7 +9,7 @@ export const supportedUtilities = [
   "tepco",
   "chubu",
   "chugoku",
-  // "rikuden",
+  "hokuden",
   // "kepco",
   // "yonden",
   // "kyuden",
