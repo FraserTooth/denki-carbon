@@ -1,5 +1,6 @@
 import { GenerationSource, JapanTsoName } from "./const";
 import { areaDataProcessed } from "./schema";
+import { onlyPositive } from "./utils";
 
 // TODO: find a more up-to-date source for this data
 // https://criepi.denken.or.jp/jp/kenkikaku/report/detail/Y06.html
@@ -135,10 +136,6 @@ export const getTotalCarbonIntensityForAreaDataRow = (
     oilkWh !== null &&
     otherFossilkWh !== null;
 
-  const onlyCountIfPositive = (value: number | null) => {
-    return value && value > 0 ? value : 0;
-  };
-
   const intensityContributors = (() => {
     if (hasFossilTypesSeparated) {
       return [
@@ -195,13 +192,16 @@ export const getTotalCarbonIntensityForAreaDataRow = (
       ];
     }
   })();
+
   const totalKwh = parseFloat(row.totalkWh ?? "0");
-  if (totalKwh === 0) return 0; // Avoid division by zero
+  // Avoid division by zero, happens once legitmately in the data
+  if (totalKwh === 0) return 0;
   const totalintensity =
     intensityContributors.reduce(
-      (total, source) => total + onlyCountIfPositive(source),
+      (total, source) => total + onlyPositive(source),
       0
     ) / parseFloat(row.totalkWh ?? "0");
+
   // Set to 3 decimal places
   const roundedIntensity = Math.round(totalintensity * 1000) / 1000;
   return roundedIntensity;

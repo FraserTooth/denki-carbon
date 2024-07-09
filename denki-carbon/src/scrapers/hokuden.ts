@@ -2,7 +2,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 
 const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
 const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";
@@ -105,7 +105,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-    return {
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_MWh),
@@ -120,6 +120,21 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
+    };
+    return {
+      ...parsed,
+      // No total in the data, create it from generating and import sources
+      totalkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
 

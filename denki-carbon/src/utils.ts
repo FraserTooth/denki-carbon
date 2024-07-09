@@ -104,3 +104,7 @@ axiosRetry(axiosInstance, {
     );
   },
 });
+
+export const onlyPositive = (value: number | null) => {
+  return value && value > 0 ? value : 0;
+};
