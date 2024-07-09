@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 
 const OLD_CSV_URL = "https://www.energia.co.jp/nw/service/retailer/data/area/";
 const BASE_LIVE_CSV_URL = "https://www.energia.co.jp/nw/jukyuu";
@@ -102,7 +102,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     if (!fromUTC.isValid) {
       throw new Error(`Invalid date: ${date} ${time}`);
     }
-    return {
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemandMWh),
@@ -117,6 +117,22 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottlingMWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorageMWh),
       interconnectorskWh: parseDpToKwh(interconnectorsMWh),
+    };
+
+    return {
+      ...parsed,
+      // No total in the data, create it from generating and import sources
+      totalkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
 
