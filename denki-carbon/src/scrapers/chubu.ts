@@ -2,7 +2,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType, downloadCSV } from ".";
-import { axiosInstance, logger } from "../utils";
+import { axiosInstance, logger, onlyPositive } from "../utils";
 
 const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
 
@@ -93,7 +93,8 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-    return {
+
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_MWh),
@@ -108,6 +109,21 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
+    };
+    return {
+      ...parsed,
+      // No total in the data, create it from generating and import sources
+      totalkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
   return data;
