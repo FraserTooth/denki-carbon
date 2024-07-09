@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 
 const CSV_URL = "https://setsuden.nw.tohoku-epco.co.jp/download.html";
 
@@ -65,6 +65,9 @@ const getRealTimeCSVUrls = (
 };
 
 const parseDpToKwh = (raw: string): number => {
+  // Return 0 for placeholder values
+  const placeholders = ["－", ""];
+  if (placeholders.includes(raw)) return 0;
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
@@ -105,7 +108,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-    return {
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemandMWh),
@@ -120,6 +123,21 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       biomasskWh: parseDpToKwh(biomassMWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorageMWh),
       interconnectorskWh: parseDpToKwh(interconnectorsMWh),
+    };
+    return {
+      ...parsed,
+      // No total in the data, create it from generating and import sources
+      totalkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
   return data;
