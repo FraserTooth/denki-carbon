@@ -4,13 +4,15 @@ import { JapanTsoName } from "../const";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
 import { logger, onlyPositive } from "../utils";
 
-const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
-const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";
+const OLD_CSV_URL = `https://www.kansai-td.co.jp/denkiyoho/area-performance/past.html`;
+const LIVE_CSV_FILE_LIST_URL =
+  "https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/filelist.json";
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
   encoding: "Shift_JIS",
-  headerRows: 6, // Header row varies, so we're just finding it manually
+  headerRows: 2,
+  firstHeader: "DATE_TIME",
   intervalMinutes: 60,
 };
 
@@ -28,35 +30,48 @@ const NEW_CSV_FORMAT = {
   intervalMinutes: 30,
 };
 
-const START_OF_HOKUDEN_LIVE_DATA = DateTime.fromISO(
-  "2024-03-26T00:00:00.000+09:00",
-  { zone: "Asia/Tokyo" }
-);
+type KepcoFileList = {
+  year: string;
+  list: {
+    name: string; // e.g. "eria_jukyu_202407_06.csv"
+    label: string;
+    size: number;
+  }[];
+};
+
+type KepcoFileListResponse = {
+  past: KepcoFileList[];
+  latest: KepcoFileList[];
+};
 
 /**
- * Rikuden's live CSV page (https://www.rikuden.co.jp/nw/denki-yoho/results_jyukyu.html) doesn't
- * show what CSVs are available, and instead populates a form with disabled/enabled options for the months and years.
- * So, this function will basically create all possible URLs for the months up to the current month
+ * Kepcos's live CSV page (https://www.kansai-td.co.jp/denkiyoho/area-performance/index.html) uses Vue
+ * and live renders the file links, so a basic scrape doesn't work.
+ * That said, we can simply ping the filelist endpoint the frontend uses to get the files.
  */
-const getHokudenNewCSVUrls = async (): Promise<
+const getKepcoNewCsvUrls = async (): Promise<
   {
     url: string;
     format: "old" | "new";
   }[]
 > => {
-  const nowJST = DateTime.now().setZone("Asia/Tokyo");
-  const startOfCurrentMonth = nowJST.startOf("month");
-  const urls: { url: string; format: "old" | "new" }[] = [];
-  // From the start of data to the start of the current month, return a url for each month
-  for (
-    let urlMonth = START_OF_HOKUDEN_LIVE_DATA;
-    urlMonth.month <= startOfCurrentMonth.month;
-    urlMonth = urlMonth.plus({ months: 1 })
-  ) {
-    // e.g. https://www.rikuden.co.jp/nw/denki-yoho/csv/eria_jukyu_202402_05.csv
-    const url = `${BASE_LIVE_CSV_URL}/eria_jukyu_${urlMonth.toFormat("yyyyMM")}_05.csv`;
-    urls.push({ url, format: "new" });
-  }
+  const fileListResponse = await fetch(LIVE_CSV_FILE_LIST_URL);
+  const fileList = (await fileListResponse.json()) as KepcoFileListResponse;
+  const { past, latest } = fileList;
+  const urls: {
+    url: string;
+    format: "old" | "new";
+  }[] = [past, latest].flatMap((list) => {
+    return list.flatMap((set) => {
+      return set.list.map((file) => {
+        return {
+          // e.g. https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/eria_jukyu_202407_06.csv
+          url: `https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/${file.name}`,
+          format: "new",
+        };
+      });
+    });
+  });
 
   return urls;
 };
@@ -79,32 +94,30 @@ const parseAverageMWFor30minToKwh = (raw: string): number => {
 };
 
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const headerRow = csv.findIndex((row) => row[0].includes("DATE"));
+  const headerRow = csv.findIndex((row) =>
+    row[0].includes(OLD_CSV_FORMAT.firstHeader)
+  );
   const dataRows = csv.slice(headerRow + 1);
   const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
     const [
-      date, // "DATE"
-      time, // "TIME"
-      totalDemand_MWh, // "エリア需要"
-      nuclear_MWh, // "原子力"
-      allfossil_MWh, // "火力"
-      hydro_MWh, // "水力"
-      geothermal_MWh, // "地熱"
-      biomass_MWh, // "バイオマス"
-      solarOutput_MWh, // "太陽光実績"
-      solarThrottling_MWh, // "太陽光抑制量"
-      windOutput_MWh, // "風力実績"
-      windThrottling_MWh, // "風力抑制量"
-      pumpedStorage_MWh, // "揚水"
-      interconnectors_MWh, // "連系線"
+      dateTime, // "DATE_TIME"
+      totalDemand_MWh, // "エリア需要〔MWh〕"
+      nuclear_MWh, // "原子力〔MWh〕"
+      allfossil_MWh, // "火力〔MWh〕"
+      hydro_MWh, // "水力〔MWh〕"
+      geothermal_MWh, // "地熱〔MWh〕"
+      biomass_MWh, // "バイオマス〔MWh〕"
+      solarOutput_MWh, // "太陽光 <newCell> 実績〔MWh〕"
+      solarThrottling_MWh, // "太陽光 <newCell> 抑制量〔MWh〕"
+      windOutput_MWh, // "風力 <newCell> 実績〔MWh〕"
+      windThrottling_MWh, // "風力 <newCell> 抑制量〔MWh〕"
+      pumpedStorage_MWh, // "揚水〔MWh〕"
+      interconnectors_MWh, // "連系線〔MWh〕"
     ] = row;
-    const fromUTC = DateTime.fromFormat(
-      `${date.trim()} ${time.trim()}`,
-      "yyyy/M/d H:mm",
-      {
-        zone: "Asia/Tokyo",
-      }
-    ).toUTC();
+    // e.g. 2016/4/1 0:00
+    const fromUTC = DateTime.fromFormat(dateTime.trim(), "yyyy/M/d H:mm", {
+      zone: "Asia/Tokyo",
+    }).toUTC();
     const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
@@ -138,14 +151,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     };
   });
 
-  // Filter out anything before the start of the live data, if the first item in the file is from 2024
-  // This is because there is an overlap between the old and new formats, and we should only keep one
-  const filteredData =
-    data[0].fromUTC.year === 2024
-      ? data.filter((dp) => dp.fromUTC < START_OF_HOKUDEN_LIVE_DATA)
-      : data;
-
-  return filteredData;
+  return data;
 };
 
 const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
@@ -214,24 +220,26 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   return dataFiltered;
 };
 
-export const getHokudenAreaData = async (
+export const getKepcoAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
   const oldCsvUrls = await getCSVUrlsFromPage(
     OLD_CSV_URL,
-    // e.g. /nw_jyukyudata/attach/area_jisseki_rikuden202403.csv
-    // or /nw_jyukyudata/attach/
-    RegExp(/area_jisseki_rikuden.+\.csv/),
-    "https://www.rikuden.co.jp"
+    // e.g. ./csv/area_jyukyu_jisseki_2022.csv
+    // https://www.kansai-td.co.jp/denkiyoho/area-performance/csv/area_jyukyu_jisseki_2023.csv
+    RegExp(/area_jyukyu_jisseki_\d\d\d\d.csv/),
+    "https://www.kansai-td.co.jp/denkiyoho/area-performance"
   );
   const oldUrls = oldCsvUrls
     .map((url) => ({ url, format: "old" }))
     .sort((a, b) => a.url.localeCompare(b.url));
 
-  const newUrls = await getHokudenNewCSVUrls();
+  const newUrls = await getKepcoNewCsvUrls();
+
+  console.log(newUrls);
 
   const urlsToDownload = (() => {
-    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
+    if (scrapeType === ScrapeType.All) return [...oldUrls];
     if (scrapeType === ScrapeType.New) return [...newUrls];
     // Sort so that the latest file is last
     if (scrapeType === ScrapeType.Latest)
@@ -270,7 +278,7 @@ export const getHokudenAreaData = async (
         days: data.length / blocksInDay,
       });
       return {
-        tso: JapanTsoName.HOKUDEN,
+        tso: JapanTsoName.KEPCO,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,

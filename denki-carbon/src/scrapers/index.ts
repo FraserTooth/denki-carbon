@@ -17,6 +17,7 @@ import xlsx from "node-xlsx";
 import { getChugokuAreaData } from "./chugoku";
 import { AxiosError } from "axios";
 import { getHokudenAreaData } from "./hokuden";
+import { getKepcoAreaData } from "./kepco";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -42,7 +43,9 @@ export const getCSVUrlsFromPage = async (
   links.forEach((link: any) => {
     const href = link.getAttribute("href");
     if (href && urlRegex.test(href)) {
-      csvUrls.push(baseUrl + href);
+      // Remove leading non-alphanumeric and non-slash characters
+      const hrefStripped = href.replace(/^[^a-zA-Z0-9\/]/, "");
+      csvUrls.push(baseUrl + hrefStripped);
     }
   });
   return csvUrls.sort();
@@ -295,6 +298,8 @@ export const scrapeTso = async (
       return getChugokuAreaData(scrapeType);
     } else if (utility === JapanTsoName.HOKUDEN) {
       return getHokudenAreaData(scrapeType);
+    } else if (utility === JapanTsoName.KEPCO) {
+      return getKepcoAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();

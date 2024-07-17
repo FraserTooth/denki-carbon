@@ -136,7 +136,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     };
   });
 
-  // Filter out anything before the start of the live data, if the file is from 2023
+  // Filter out anything before the start of the live data, if the first value in the file is from 2023
   // This is because there is an overlap between the old and new formats, and we should only keep one
   const filteredData =
     data[0].fromUTC.year === 2023

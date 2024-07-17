@@ -71,7 +71,7 @@ export const SUPPORTED_TSOS = [
   JapanTsoName.TEPCO,
   JapanTsoName.CHUBU,
   JapanTsoName.HOKUDEN,
-  // JapanTsoName.KEPCO,
+  JapanTsoName.KEPCO,
   JapanTsoName.CHUGOKU,
   // JapanTsoName.YONDEN,
   // JapanTsoName.KYUDEN,
