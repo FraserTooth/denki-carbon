@@ -239,7 +239,7 @@ export const getKepcoAreaData = async (
   console.log(newUrls);
 
   const urlsToDownload = (() => {
-    if (scrapeType === ScrapeType.All) return [...oldUrls];
+    if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
     if (scrapeType === ScrapeType.New) return [...newUrls];
     // Sort so that the latest file is last
     if (scrapeType === ScrapeType.Latest)
