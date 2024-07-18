@@ -61,7 +61,7 @@ const getKepcoNewCsvUrls = async (): Promise<
   const urls: {
     url: string;
     format: "old" | "new";
-  }[] = [past, latest].flatMap((list) => {
+  }[] = [latest, past].flatMap((list) => {
     return list.flatMap((set) => {
       return set.list.map((file) => {
         return {
@@ -73,7 +73,7 @@ const getKepcoNewCsvUrls = async (): Promise<
     });
   });
 
-  return urls;
+  return urls.sort((a, b) => a.url.localeCompare(b.url));
 };
 
 const parseDpToKwh = (raw: string): number => {
@@ -236,14 +236,10 @@ export const getKepcoAreaData = async (
 
   const newUrls = await getKepcoNewCsvUrls();
 
-  console.log(newUrls);
-
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
     if (scrapeType === ScrapeType.New) return [...newUrls];
-    // Sort so that the latest file is last
-    if (scrapeType === ScrapeType.Latest)
-      return [newUrls.sort()[newUrls.length - 1]];
+    if (scrapeType === ScrapeType.Latest) return [newUrls[newUrls.length - 1]];
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
