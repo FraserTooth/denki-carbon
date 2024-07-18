@@ -59,7 +59,7 @@ export default function Main() {
       tso: utility,
       from: oneDayAgo.toISO() ?? "",
       to: predictionLimit.toISO() ?? "",
-      includeForecast: graphDate === null ? true : false,
+      includeForecast: true,
     });
   }, [utility]);
 
