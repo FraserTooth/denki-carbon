@@ -2,7 +2,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 
 const CSV_URL = `https://www.yonden.co.jp/nw/supply_demand/data_download.html`;
 const LIVE_CSV_URL = `https://www.yonden.co.jp/nw/supply_demand/index.html`;
@@ -68,7 +68,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottling_daMWh, // "風力 <newCell> 制御量"
       pumpedStorage_daMWh, // "揚水"
       interconnectors_daMWh, // "連系線"
-      total_daMWh, // "合計"
+      // total_daMWh, "合計" - note: total demand, not generation
     ] = row;
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
@@ -93,9 +93,22 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         windThrottlingkWh: parseDpToKwh(windThrottling_daMWh),
         pumpedStoragekWh: parseDpToKwh(pumpedStorage_daMWh),
         interconnectorskWh: parseDpToKwh(interconnectors_daMWh),
-        totalkWh: parseDpToKwh(total_daMWh),
       };
-      return parsed;
+      return {
+        ...parsed,
+        // Need to calculate total generation
+        totalkWh: [
+          parsed.nuclearkWh,
+          parsed.allfossilkWh,
+          parsed.hydrokWh,
+          parsed.geothermalkWh,
+          parsed.biomasskWh,
+          parsed.solarOutputkWh,
+          parsed.windOutputkWh,
+          parsed.pumpedStoragekWh,
+          parsed.interconnectorskWh,
+        ].reduce((acc, val) => acc + onlyPositive(val), 0),
+      };
     } catch (e) {
       logger.error(`Failed to parse row index ${i}: ${row}`);
       throw e;
