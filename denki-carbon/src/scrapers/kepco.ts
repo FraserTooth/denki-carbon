@@ -86,6 +86,8 @@ const parseDpToKwh = (raw: string): number => {
 };
 
 const parseAverageMWFor30minToKwh = (raw: string): number => {
+  const placeholders = ["－", ""];
+  if (placeholders.includes(raw)) return 0;
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MW, so multiply by 1000 to get kW
   const averageKw = parseFloat(cleaned) * 1000;
@@ -211,7 +213,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
   // Remove NaN rows

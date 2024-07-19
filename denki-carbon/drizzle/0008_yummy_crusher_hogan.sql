@@ -1,0 +1,1 @@
+ALTER TABLE "area_data_processed" ALTER COLUMN "total_generation_kwh" SET NOT NULL;

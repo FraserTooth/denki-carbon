@@ -20,6 +20,9 @@ import { getHokudenAreaData } from "./hokuden";
 import { getKepcoAreaData } from "./kepco";
 import { getYondenAreaData } from "./yonden";
 
+/**
+ * The type of scraping to perform
+ */
 export enum ScrapeType {
   // Scrape all data, including old data
   All = "all",
@@ -29,6 +32,14 @@ export enum ScrapeType {
   Latest = "latest",
 }
 
+/**
+ * Downloads a HTML page and extracts URLs from it based on a regex
+ *
+ * @param pageUrl the URL of the page to download
+ * @param urlRegex the regex to match URLs
+ * @param baseUrl the base URL to prepend to the matched URLs (since <a> tags generally don't have the full URL)
+ * @returns an array of URLs as strings
+ */
 export const getCSVUrlsFromPage = async (
   pageUrl: string,
   urlRegex: RegExp,
@@ -52,6 +63,14 @@ export const getCSVUrlsFromPage = async (
   return csvUrls.sort();
 };
 
+/**
+ * Core function to handle the downloading of files from a TSO website
+ *
+ * @param url the URL to download from
+ * @param encoding the encoding of the file
+ * @param attempt which attempt we're on, part of the retry recursion, defaults to 1
+ * @returns the decoded raw data of the file in a 2D array of strings
+ */
 export const downloadCSV = async (
   url: string,
   encoding: string,
@@ -174,6 +193,12 @@ export const downloadCSV = async (
   return records;
 };
 
+/**
+ * Given the data from a processed file, uploads it into the database
+ *
+ * @param file the processed file data
+ * @returns information about the uploaded file
+ */
 export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   let latestDatetimeSaved: DateTime | undefined;
   const insertValues: (typeof areaDataProcessed.$inferInsert)[] = file.data.map(
@@ -235,6 +260,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         windThrottlingkWh: row.windThrottlingkWh.toString(),
         pumpedStoragekWh: row.pumpedStoragekWh.toString(),
         interconnectorskWh: row.interconnectorskWh.toString(),
+        totalGenerationkWh: row.totalGenerationkWh.toString(),
         // Possibly undefined fields
         lngkWh: row.lngkWh?.toString(),
         coalkWh: row.coalkWh?.toString(),
@@ -242,7 +268,6 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         otherFossilkWh: row.otherFossilkWh?.toString(),
         batteryStoragekWh: row.batteryStoragekWh?.toString(),
         otherkWh: row.otherkWh?.toString(),
-        totalGenerationkWh: row.totalGenerationkWh?.toString(),
       };
     }
   );
@@ -294,6 +319,13 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
   };
 };
 
+/**
+ * Entry point for scraping a given TSO
+ *
+ * @param utility
+ * @param scrapeType
+ * @returns
+ */
 export const scrapeTso = async (
   utility: JapanTsoName,
   scrapeType: ScrapeType
@@ -342,6 +374,13 @@ export const scrapeTso = async (
   };
 };
 
+/**
+ * Entry point for a scraping job
+ *
+ * @param tsoToScrape
+ * @param scrapeType
+ * @param shouldPredict
+ */
 export const scrapeJob = async (
   tsoToScrape: JapanTsoName[],
   scrapeType: ScrapeType,

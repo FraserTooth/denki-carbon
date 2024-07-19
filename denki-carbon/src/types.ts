@@ -22,7 +22,8 @@ export type AreaCSVDataProcessed = {
   batteryStoragekWh?: number; // 蓄電池
   interconnectorskWh: number; // 連系線
   otherkWh?: number; // その他
-  totalGenerationkWh?: number; // 合計 TODO: might not actually be right...
+  // Note: would be 合計 but this subtracts storage charging and interconnectors
+  totalGenerationkWh: number; // Sum of all generation and positive values for storage/interconnectors
 };
 
 export type AreaDataFileProcessed = {

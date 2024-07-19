@@ -71,7 +71,7 @@ export const areaDataProcessed = pgTable("area_data_processed", {
   batteryStoragekWh: numeric("battery_storage_kwh"),
   interconnectorskWh: numeric("interconnectors_kwh"),
   otherkWh: numeric("other_kwh"),
-  totalGenerationkWh: numeric("total_generation_kwh"),
+  totalGenerationkWh: numeric("total_generation_kwh").notNull(),
   lastUpdated: timestamp("last_updated", {
     withTimezone: true,
   })
