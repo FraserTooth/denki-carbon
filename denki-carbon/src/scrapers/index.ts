@@ -242,7 +242,7 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
         otherFossilkWh: row.otherFossilkWh?.toString(),
         batteryStoragekWh: row.batteryStoragekWh?.toString(),
         otherkWh: row.otherkWh?.toString(),
-        totalkWh: row.totalkWh?.toString(),
+        totalGenerationkWh: row.totalGenerationkWh?.toString(),
       };
     }
   );

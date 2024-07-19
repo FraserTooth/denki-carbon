@@ -97,7 +97,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       return {
         ...parsed,
         // Need to calculate total generation
-        totalkWh: [
+        totalGenerationkWh: [
           parsed.nuclearkWh,
           parsed.allfossilkWh,
           parsed.hydrokWh,
@@ -175,7 +175,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
   // Remove NaN rows

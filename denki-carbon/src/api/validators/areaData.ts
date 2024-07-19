@@ -163,7 +163,7 @@ export const areaDataGetResponseValidator200ElementHistoric = t.Object({
       examples: [0],
     })
   ),
-  totalkWh: t.Nullable(
+  totalGenerationkWh: t.Nullable(
     t.Number({
       description: "The total generation + consumption in kWh",
       examples: [14582500],

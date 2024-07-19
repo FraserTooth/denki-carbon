@@ -127,7 +127,7 @@ const parseOldXLS = (xlsCsv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
-      totalkWh: parseDpToKwh(totalSupply_MWh),
+      totalGenerationkWh: parseDpToKwh(totalSupply_MWh),
     };
   });
   return data;
@@ -179,7 +179,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
-      totalkWh: parseDpToKwh(totalSupply_MWh),
+      totalGenerationkWh: parseDpToKwh(totalSupply_MWh),
     };
   });
   return data;
@@ -242,7 +242,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
   // Remove NaN rows
@@ -308,7 +308,7 @@ const parseLatestCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
   // Remove NaN rows

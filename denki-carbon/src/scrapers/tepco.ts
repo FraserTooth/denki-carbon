@@ -79,7 +79,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_daMWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_daMWh),
       interconnectorskWh: parseDpToKwh(interconnectors_daMWh),
-      totalkWh: parseDpToKwh(total_daMWh),
+      totalGenerationkWh: parseDpToKwh(total_daMWh),
     };
   });
   return data;
@@ -142,7 +142,7 @@ const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
     };
   });
   return data;

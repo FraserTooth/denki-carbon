@@ -64,6 +64,6 @@ export const numberifyAreaDataRow = (
     batteryStoragekWh: nullableStrToNum(row.batteryStoragekWh),
     interconnectorskWh: nullableStrToNum(row.interconnectorskWh),
     otherkWh: nullableStrToNum(row.otherkWh),
-    totalkWh: nullableStrToNum(row.totalkWh),
+    totalGenerationkWh: nullableStrToNum(row.totalGenerationkWh),
   };
 };

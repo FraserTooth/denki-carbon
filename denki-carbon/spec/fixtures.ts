@@ -38,7 +38,7 @@ export const EXAMPLE_AREA_DATA_PROCESSED_ROW_TEPCO: typeof areaDataProcessed.$in
     batteryStoragekWh: "0",
     interconnectorskWh: "2134500",
     otherkWh: "133500",
-    totalkWh: "11040500",
+    totalGenerationkWh: "11040500",
     lastUpdated: new Date("2024-06-03T14:06:33.765Z"),
   };
 
@@ -69,7 +69,7 @@ export const EXAMPLE_AREA_DATA_PROCESSED_ROW_TEPCO_ALL_ZEROS: typeof areaDataPro
     batteryStoragekWh: "0",
     interconnectorskWh: "0",
     otherkWh: "0",
-    totalkWh: "0",
+    totalGenerationkWh: "0",
     lastUpdated: new Date("2024-06-03T14:06:33.765Z"),
   };
 
@@ -110,7 +110,7 @@ export const EXAMPLE_AREA_DATA_PROCESSED_ROW_TEPCO_OLD_FORMAT: typeof areaDataPr
     batteryStoragekWh: null,
     interconnectorskWh: "2010000",
     otherkWh: null,
-    totalkWh: "25550000",
+    totalGenerationkWh: "25550000",
     lastUpdated: new Date("2024-06-03T14:06:27.464Z"),
   };
 
@@ -141,7 +141,7 @@ export const EXAMPLE_AREA_DATA_PROCESSED_ROW_TEPCO_OLD_FORMAT_ALL_ZEROS: typeof 
     batteryStoragekWh: null,
     interconnectorskWh: "0",
     otherkWh: null,
-    totalkWh: "0",
+    totalGenerationkWh: "0",
     lastUpdated: new Date("2024-06-03T14:06:27.464Z"),
   };
 
@@ -172,6 +172,6 @@ export const EXAMPLE_AREA_DATA_PROCESSED_ROW_TEPCO_OLD_FORMAT_ZERO_FOSSILS: type
     batteryStoragekWh: null,
     interconnectorskWh: "2010000",
     otherkWh: null,
-    totalkWh: "25550000",
+    totalGenerationkWh: "25550000",
     lastUpdated: new Date("2024-06-03T14:06:27.464Z"),
   };

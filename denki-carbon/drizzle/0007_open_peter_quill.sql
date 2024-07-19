@@ -1,0 +1,1 @@
+ALTER TABLE "area_data_processed" RENAME COLUMN "total_kwh" TO "total_generation_kwh";

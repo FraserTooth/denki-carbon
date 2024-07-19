@@ -193,14 +193,14 @@ export const getTotalCarbonIntensityForAreaDataRow = (
     }
   })();
 
-  const totalKwh = parseFloat(row.totalkWh ?? "0");
+  const totalGenerationKwh = parseFloat(row.totalGenerationkWh ?? "0");
   // Avoid division by zero, happens once legitmately in the data
-  if (totalKwh === 0) return 0;
+  if (totalGenerationKwh === 0) return 0;
   const totalintensity =
     intensityContributors.reduce(
       (total, source) => total + onlyPositive(source),
       0
-    ) / parseFloat(row.totalkWh ?? "0");
+    ) / totalGenerationKwh;
 
   // Set to 3 decimal places
   const roundedIntensity = Math.round(totalintensity * 1000) / 1000;
