@@ -1,7 +1,8 @@
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, downloadCSV } from ".";
+import { ScrapeType } from ".";
+import { downloadCSV } from "./utils";
 import { axiosInstance, logger, onlyPositive } from "../utils";
 
 const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;

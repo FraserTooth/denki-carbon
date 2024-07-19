@@ -1,8 +1,9 @@
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { logger } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const CSV_URL = `https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/index.html`;
 const LIVE_URL = `https://denkiyoho.hepco.co.jp/supply_demand_results.html`;

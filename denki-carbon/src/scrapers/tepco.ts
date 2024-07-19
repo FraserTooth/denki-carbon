@@ -1,8 +1,9 @@
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { logger } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const OLD_CSV_URL = `https://www.tepco.co.jp/forecast/html/area_jukyu_p-j.html`;
 

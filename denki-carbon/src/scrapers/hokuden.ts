@@ -1,8 +1,9 @@
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { logger, onlyPositive } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
 const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";

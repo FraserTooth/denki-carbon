@@ -1,8 +1,9 @@
 import { DateTime } from "luxon";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { logger, onlyPositive } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const OLD_CSV_URL = "https://www.energia.co.jp/nw/service/retailer/data/area/";
 const BASE_LIVE_CSV_URL = "https://www.energia.co.jp/nw/jukyuu";

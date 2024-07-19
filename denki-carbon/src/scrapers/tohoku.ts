@@ -1,8 +1,9 @@
 import { DateTime } from "luxon";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { logger, onlyPositive } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const CSV_URL = "https://setsuden.nw.tohoku-epco.co.jp/download.html";
 

@@ -1,8 +1,9 @@
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
-import { ScrapeType, downloadCSV, getCSVUrlsFromPage } from ".";
+import { ScrapeType } from ".";
 import { logger, onlyPositive } from "../utils";
+import { downloadCSV, getCSVUrlsFromPage } from "./utils";
 
 const OLD_CSV_URL = `https://www.kansai-td.co.jp/denkiyoho/area-performance/past.html`;
 const LIVE_CSV_FILE_LIST_URL =
