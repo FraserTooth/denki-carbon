@@ -18,6 +18,7 @@ import { getChugokuAreaData } from "./chugoku";
 import { AxiosError } from "axios";
 import { getHokudenAreaData } from "./hokuden";
 import { getKepcoAreaData } from "./kepco";
+import { getYondenAreaData } from "./yonden";
 
 export enum ScrapeType {
   // Scrape all data, including old data
@@ -111,6 +112,11 @@ export const downloadCSV = async (
               .setZone("Asia/Tokyo")
               .toFormat("yyyy/MM/dd");
           }
+          if (row[1] instanceof Date) {
+            row[1] = DateTime.fromJSDate(row[1])
+              .setZone("Asia/Tokyo")
+              .toFormat("HH:mm");
+          }
           return row.join(",");
         })
         .join("\n");
@@ -149,9 +155,16 @@ export const downloadCSV = async (
     skipEmptyLines: true,
   });
 
-  // Trim empty rows, but only at the end of the file
+  // Trim rows, but only at the end of the file
   for (let i = records.length - 1; i >= 0; i--) {
-    if (records[i].every((cell) => cell === "")) {
+    if (
+      // If has 2 or fewer columns, it's likely a datetime row with no data, trim it
+      records[i].length <= 2 ||
+      // If all cells are empty, trim it
+      records[i].every((cell) => cell === "") ||
+      // If first cell contains "合", trim it - edge case for Yonden
+      records[i][0].includes("合")
+    ) {
       records.pop();
     } else {
       break;
@@ -300,6 +313,8 @@ export const scrapeTso = async (
       return getHokudenAreaData(scrapeType);
     } else if (utility === JapanTsoName.KEPCO) {
       return getKepcoAreaData(scrapeType);
+    } else if (utility === JapanTsoName.YONDEN) {
+      return getYondenAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
