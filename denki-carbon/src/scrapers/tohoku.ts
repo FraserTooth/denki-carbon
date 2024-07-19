@@ -3,7 +3,12 @@ import { ScrapeType } from ".";
 import { JapanTsoName } from "../const";
 import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { logger, onlyPositive } from "../utils";
-import { downloadCSV, getCSVUrlsFromPage } from "./utils";
+import {
+  downloadCSV,
+  getCSVUrlsFromPage,
+  NEW_CSV_FORMAT,
+  parseNewCSV,
+} from "./utils";
 
 const CSV_URL = "https://setsuden.nw.tohoku-epco.co.jp/download.html";
 
@@ -12,13 +17,6 @@ const OLD_CSV_FORMAT = {
   encoding: "Shift_JIS",
   headerRows: 1,
   intervalMinutes: 60,
-};
-
-const NEW_CSV_FORMAT = {
-  blocksInDay: 48,
-  encoding: "utf-8",
-  headerRows: 2,
-  intervalMinutes: 30,
 };
 
 /**
@@ -140,75 +138,6 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         parsed.interconnectorskWh,
       ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
-  });
-  return data;
-};
-
-const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  // Trim 2 header rows
-  const dataRows = csv.slice(NEW_CSV_FORMAT.headerRows);
-  const data: AreaCSVDataProcessed[] = [];
-  dataRows.forEach((row) => {
-    const [
-      date, // "DATE"
-      time, // "TIME"
-      totalDemandAverageMW, // "エリア需要"
-      nuclearAverageMW, // "原子力"
-      lngAverageMW, // "火力(LNG)"
-      coalAverageMW, // "火力(石炭)"
-      oilAverageMW, // "火力(石油)"
-      otherFossilAverageMW, // "火力(その他)"
-      hydroAverageMW, // "水力"
-      geothermalAverageMW, // "地熱"
-      biomassAverageMW, // "バイオマス"
-      solarOutputAverageMW, // "太陽光発電実績"
-      solarThrottlingAverageMW, // "太陽光出力制御量"
-      windOutputAverageMW, // "風力発電実績"
-      windThrottlingAverageMW, // "風力出力制御量"
-      pumpedStorageAverageMW, // "揚水"
-      batteryStorageAverageMW, // "蓄電池"
-      interconnectorsAverageMW, // "連系線"
-      otherAverageMW, // "その他"
-      totalAverageMW, // "合計"
-    ] = row;
-
-    // Skip rows with missing data, which is expected on the "today" realtime value, totalAverageMW is a good indicator
-    if (!totalDemandAverageMW) return;
-
-    const fromUTC = DateTime.fromFormat(
-      `${date.trim()} ${time.trim()}`,
-      "yyyy/M/d H:mm",
-      {
-        zone: "Asia/Tokyo",
-      }
-    ).toUTC();
-    const lngkWh = parseAverageMWFor30minToKwh(lngAverageMW);
-    const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
-    const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
-    const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
-    data.push({
-      fromUTC,
-      toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
-      totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
-      nuclearkWh: parseAverageMWFor30minToKwh(nuclearAverageMW),
-      allfossilkWh: lngkWh + coalkWh + oilkWh + otherFossilkWh,
-      lngkWh,
-      coalkWh,
-      oilkWh,
-      otherFossilkWh,
-      hydrokWh: parseAverageMWFor30minToKwh(hydroAverageMW),
-      geothermalkWh: parseAverageMWFor30minToKwh(geothermalAverageMW),
-      biomasskWh: parseAverageMWFor30minToKwh(biomassAverageMW),
-      solarOutputkWh: parseAverageMWFor30minToKwh(solarOutputAverageMW),
-      solarThrottlingkWh: parseAverageMWFor30minToKwh(solarThrottlingAverageMW),
-      windOutputkWh: parseAverageMWFor30minToKwh(windOutputAverageMW),
-      windThrottlingkWh: parseAverageMWFor30minToKwh(windThrottlingAverageMW),
-      pumpedStoragekWh: parseAverageMWFor30minToKwh(pumpedStorageAverageMW),
-      batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
-      interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
-      otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
-    });
   });
   return data;
 };

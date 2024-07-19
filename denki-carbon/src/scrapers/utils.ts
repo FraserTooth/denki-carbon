@@ -15,6 +15,7 @@ export const NEW_CSV_FORMAT = {
   encoding: "Shift_JIS",
   headerRows: 2,
   intervalMinutes: 30,
+  firstHeader: "DATE",
 };
 
 /**
@@ -40,8 +41,12 @@ export const parseAverageMWFor30minToKwh = (raw: string): number => {
  * @returns
  */
 export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const dataRows = csv.slice(NEW_CSV_FORMAT.headerRows);
-  const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
+  const headerRow = csv.findIndex((row) =>
+    row[0].includes(NEW_CSV_FORMAT.firstHeader)
+  );
+  const dataRows = csv.slice(headerRow + 1);
+  const data: AreaCSVDataProcessed[] = [];
+  dataRows.forEach((row) => {
     const [
       date, // "DATE"
       time, // "TIME"
@@ -64,6 +69,10 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       otherAverageMW, // "その他"
       totalAverageMW, // "合計"
     ] = row;
+
+    // Skip rows with missing data, which is expected on the "today" realtime value, totalAverageMW is a good indicator
+    if (!totalDemandAverageMW) return;
+
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
       "yyyy/M/d H:mm",
@@ -75,7 +84,7 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
     const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
     const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
-    return {
+    data.push({
       fromUTC,
       toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
@@ -97,7 +106,7 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
       totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
-    };
+    });
   });
   // Remove NaN rows
   const dataFiltered = data.filter((row) => !isNaN(row.totalDemandkWh));
