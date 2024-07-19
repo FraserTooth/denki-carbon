@@ -5,7 +5,12 @@ import { JSDOM } from "jsdom";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
 import { DateTime } from "luxon";
-import { logger, conflictUpdateAllExcept, axiosInstance } from "../utils";
+import {
+  logger,
+  conflictUpdateAllExcept,
+  axiosInstance,
+  onlyPositive,
+} from "../utils";
 import * as yauzlp from "yauzl-promise";
 import xlsx from "node-xlsx";
 import { AxiosError } from "axios";
@@ -66,7 +71,7 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStorageAverageMW, // "蓄電池"
       interconnectorsAverageMW, // "連系線"
       otherAverageMW, // "その他"
-      totalAverageMW, // "合計"
+      totalAverageMW, // "合計" - uses a value that subtracts charging storage and interconnectors, so isn't useful for carbon calcs
     ] = row;
 
     // Skip rows with missing data, which is expected on the "today" realtime value, totalAverageMW is a good indicator
@@ -84,7 +89,7 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
     const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
     const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
-    data.push({
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
@@ -105,7 +110,26 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
       interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
-      totalGenerationkWh: parseAverageMWFor30minToKwh(totalAverageMW),
+    };
+    data.push({
+      ...parsed,
+      // Calculate total generation manually, sum of the positive values
+      totalGenerationkWh: [
+        parsed.nuclearkWh,
+        parsed.lngkWh,
+        parsed.coalkWh,
+        parsed.oilkWh,
+        parsed.otherFossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh, // TODO - do I need to subtract throttling to get the right output?
+        parsed.windOutputkWh, // TODO - do I need to subtract throttling to get the right output?
+        parsed.pumpedStoragekWh,
+        parsed.batteryStoragekWh,
+        parsed.interconnectorskWh,
+        parsed.otherkWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     });
   });
   // Remove NaN rows
