@@ -15,7 +15,6 @@ export const NEW_CSV_FORMAT = {
   encoding: "Shift_JIS",
   headerRows: 2,
   intervalMinutes: 30,
-  firstHeader: "DATE",
 };
 
 /**
@@ -41,8 +40,8 @@ export const parseAverageMWFor30minToKwh = (raw: string): number => {
  * @returns
  */
 export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const headerRow = csv.findIndex((row) =>
-    row[0].includes(NEW_CSV_FORMAT.firstHeader)
+  const headerRow = csv.findIndex(
+    (row) => row[0].includes("DATE") || row[0].includes("年月日")
   );
   const dataRows = csv.slice(headerRow + 1);
   const data: AreaCSVDataProcessed[] = [];
@@ -74,7 +73,8 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     if (!totalDemandAverageMW) return;
 
     const fromUTC = DateTime.fromFormat(
-      `${date.trim()} ${time.trim()}`,
+      // "～" character only included in latest HEPCO file
+      `${date.trim()} ${time.trim().split("～")[0]}`,
       "yyyy/M/d H:mm",
       {
         zone: "Asia/Tokyo",
