@@ -90,13 +90,16 @@ export const areaDataGetHandler = async (
   });
 
   // Get forecasts for times after the last row of actual results
-  const forecastsInFuture = forecastedDataResult.filter(
-    (forecast) =>
-      forecast.datetimeFrom.getTime() >
-      resultsWithForecasts[
-        resultsWithForecasts.length - 1
-      ].datetimeFrom.getTime()
-  );
+  //   if there are no actual results, get all forecasts
+  const forecastsInFuture = resultsWithForecasts.length
+    ? forecastedDataResult.filter(
+        (forecast) =>
+          forecast.datetimeFrom.getTime() >
+          resultsWithForecasts[
+            resultsWithForecasts.length - 1
+          ].datetimeFrom.getTime()
+      )
+    : forecastedDataResult;
 
   // Remove duplicates using the field that was last created
   const uniqueDatetimeFromsInFutureForecasts = Array.from(
