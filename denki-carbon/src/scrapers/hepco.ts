@@ -21,19 +21,6 @@ const OLD_CSV_FORMAT = {
   firstHeader: "月日",
 };
 
-const OLD_XLS_FORMAT = {
-  blocksInDay: 24,
-  headerRows: 3, // During processing we trim a row, so its one less than the usual header rows
-  intervalMinutes: 60,
-};
-
-const LATEST_CSV_FORMAT = {
-  blocksInDay: 48,
-  encoding: "Shift_JIS",
-  headerRows: 4,
-  intervalMinutes: 30,
-};
-
 /**
  * This function gets the URLs for the CSV files from the HEPCO website for the current day and any previous days we can find
  *

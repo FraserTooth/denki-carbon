@@ -2,7 +2,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType } from ".";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 import {
   downloadCSV,
   getCSVUrlsFromPage,
@@ -27,14 +27,6 @@ const parseDpToKwh = (raw: string): number => {
   return parseFloat(cleaned) * 10000;
 };
 
-const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in MW, so multiply by 1000 to get kW
-  const averageKw = parseFloat(cleaned) * 1000;
-  // Multiply by hours to get kWh
-  return averageKw * (30 / 60);
-};
-
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   // Trim 3 header rows
   const dataRows = csv.slice(OLD_CSV_FORMAT.headerRows);
@@ -54,7 +46,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottling_daMWh, // "風力出力制御量"
       pumpedStorage_daMWh, // "揚水"
       interconnectors_daMWh, // "連系線"
-      total_daMWh, // "合計"
+      // total_daMWh, "合計" - note: total demand, not generation
     ] = row;
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
@@ -63,7 +55,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-    return {
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_daMWh),
@@ -78,7 +70,21 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_daMWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_daMWh),
       interconnectorskWh: parseDpToKwh(interconnectors_daMWh),
-      totalGenerationkWh: parseDpToKwh(total_daMWh),
+    };
+    return {
+      ...parsed,
+      // Need to calculate total generation
+      totalGenerationkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
   return data;
