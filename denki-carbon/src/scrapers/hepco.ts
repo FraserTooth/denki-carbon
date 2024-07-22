@@ -2,7 +2,7 @@ import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
 import { DateTime } from "luxon";
 import { JapanTsoName } from "../const";
 import { ScrapeType } from ".";
-import { logger } from "../utils";
+import { logger, onlyPositive } from "../utils";
 import {
   downloadCSV,
   getCSVUrlsFromPage,
@@ -18,6 +18,7 @@ const OLD_CSV_FORMAT = {
   encoding: "Shift_JIS",
   headerRows: 4,
   intervalMinutes: 60,
+  firstHeader: "月日",
 };
 
 const OLD_XLS_FORMAT = {
@@ -72,68 +73,14 @@ const parseDpToKwh = (raw: string): number => {
   return parseFloat(cleaned) * 1000;
 };
 
-const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in MW, so multiply by 1000 to get kW
-  const averageKw = parseFloat(cleaned) * 1000;
-  // Multiply by hours to get kWh
-  return averageKw * (30 / 60);
-};
-
-const parseOldXLS = (xlsCsv: string[][]): AreaCSVDataProcessed[] => {
-  const dataRows = xlsCsv.slice(OLD_XLS_FORMAT.headerRows);
-  let lastDate: string | undefined = undefined;
-  const data: AreaCSVDataProcessed[] = dataRows.map((row, index) => {
-    // 月日	時刻	エリア需要	原子力	火力	水力	地熱	バイオマス	太陽光実績	太陽光抑制量	風力実績	風力抑制量	揚水	連系線	供給力合計
-    const [
-      date, // "月日" - only filled in for the first row of the day - e.g "2024/1/1"
-      time, // "時刻" - Japanese format - e.g. "0時", "1時"
-      totalDemand_MWh, // "エリア需要"
-      nuclear_MWh, // "原子力"
-      allfossil_MWh, // "火力"
-      hydro_MWh, // "水力"
-      geothermal_MWh, // "地熱"
-      biomass_MWh, // "バイオマス"
-      solarOutput_MWh, // "太陽光実績"
-      solarThrottling_MWh, // "太陽光抑制量"
-      windOutput_MWh, // "風力実績"
-      windThrottling_MWh, // "風力抑制量"
-      pumpedStorage_MWh, // "揚水"
-      interconnectors_MWh, // "連系線"
-      totalSupply_MWh, // "供給力合計"
-    ] = row;
-    if (date) lastDate = date;
-    if (!lastDate) throw new Error(`Cannot resolve date for row ${index}`);
-    const fromUTC = DateTime.fromFormat(
-      `${lastDate.trim()} ${time.trim()}`,
-      "yyyy/MM/dd H時",
-      {
-        zone: "Asia/Tokyo",
-      }
-    ).toUTC();
-    return {
-      fromUTC,
-      toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
-      totalDemandkWh: parseDpToKwh(totalDemand_MWh),
-      nuclearkWh: parseDpToKwh(nuclear_MWh),
-      allfossilkWh: parseDpToKwh(allfossil_MWh),
-      hydrokWh: parseDpToKwh(hydro_MWh),
-      geothermalkWh: parseDpToKwh(geothermal_MWh),
-      biomasskWh: parseDpToKwh(biomass_MWh),
-      solarOutputkWh: parseDpToKwh(solarOutput_MWh),
-      solarThrottlingkWh: parseDpToKwh(solarThrottling_MWh),
-      windOutputkWh: parseDpToKwh(windOutput_MWh),
-      windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
-      pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
-      interconnectorskWh: parseDpToKwh(interconnectors_MWh),
-      totalGenerationkWh: parseDpToKwh(totalSupply_MWh),
-    };
-  });
-  return data;
-};
-
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const dataRows = csv.slice(OLD_CSV_FORMAT.headerRows);
+  const headerRow = csv.findIndex((row) =>
+    row[0].includes(OLD_CSV_FORMAT.firstHeader)
+  );
+  let startRow = headerRow + 1;
+  // Skip first row if it is empty
+  if (csv[startRow].every((value) => value === "")) startRow++;
+  const dataRows = csv.slice(startRow);
   let lastDate: string | undefined = undefined;
   const data: AreaCSVDataProcessed[] = dataRows.map((row, index) => {
     // 月日	時刻	エリア需要	原子力	火力	水力	地熱	バイオマス	太陽光実績	太陽光抑制量	風力実績	風力抑制量	揚水	連系線	供給力合計
@@ -152,7 +99,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottling_MWh, // "風力抑制量"
       pumpedStorage_MWh, // "揚水"
       interconnectors_MWh, // "連系線"
-      totalSupply_MWh, // "供給力合計"
+      // totalSupply_MWh, "供給力合計"  - note: total demand, not generation
     ] = row;
     if (date) lastDate = date;
     if (!lastDate) throw new Error(`Cannot resolve date for row ${index}`);
@@ -163,7 +110,7 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-    return {
+    const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_MWh),
@@ -178,7 +125,21 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
       pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
       interconnectorskWh: parseDpToKwh(interconnectors_MWh),
-      totalGenerationkWh: parseDpToKwh(totalSupply_MWh),
+    };
+    return {
+      ...parsed,
+      // Need to calculate total generation
+      totalGenerationkWh: [
+        parsed.nuclearkWh,
+        parsed.allfossilkWh,
+        parsed.hydrokWh,
+        parsed.geothermalkWh,
+        parsed.biomasskWh,
+        parsed.solarOutputkWh,
+        parsed.windOutputkWh,
+        parsed.pumpedStoragekWh,
+        parsed.interconnectorskWh,
+      ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
   return data;
@@ -189,8 +150,7 @@ export const getHepcoAreaData = async (
 ): Promise<AreaDataFileProcessed[]> => {
   const historicUrls = await getCSVUrlsFromPage(
     CSV_URL,
-    // RegExp(/(.csv)|(.xls)$/),
-    RegExp(/(.csv)$/),
+    RegExp(/(.csv)|(.xls)$/),
     "https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/"
   );
 
@@ -199,6 +159,7 @@ export const getHepcoAreaData = async (
   const oldUrls = historicUrls
     .filter((url) => url.includes("sup_dem_results"))
     .map((url) => ({ url, format: "old" }));
+
   // e.g. https://www.hepco.co.jp/network/con_service/public_document/supply_demand_results/csv/eria_jukyu_202404_01.csv
   const newUrls = historicUrls
     .filter((url) => url.includes("eria_jukyu"))
@@ -224,15 +185,10 @@ export const getHepcoAreaData = async (
       const { url, format } = file;
       const { parser, blocksInDay, encoding, headerRows } =
         format === "old"
-          ? url.includes(".xls")
-            ? {
-                parser: parseOldXLS,
-                ...OLD_CSV_FORMAT,
-              }
-            : {
-                parser: parseOldCSV,
-                ...OLD_CSV_FORMAT,
-              }
+          ? {
+              parser: parseOldCSV,
+              ...OLD_CSV_FORMAT,
+            }
           : {
               parser: parseNewCSV,
               ...NEW_CSV_FORMAT,
