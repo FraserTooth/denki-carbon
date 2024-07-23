@@ -11,7 +11,7 @@ export const supportedUtilities = [
   "chugoku",
   "hokuden",
   "kepco",
-  // "yonden",
+  "yonden",
   // "kyuden",
   // "okiden",
 ] as const;
