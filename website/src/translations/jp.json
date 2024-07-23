@@ -47,11 +47,10 @@
     "line": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh"
   },
   "graph": {
-    "average": "平均",
     "intensity": "炭素強度",
     "compare": "比較月",
     "forecast": "今日の予報",
-    "averageLine": "平均",
+    "intensityLine": "過去の強度",
     "forecastLine": "予報",
     "compareLine": "比較月",
     "targetLine": "2030までの目標",

@@ -55,10 +55,10 @@ export default function Graph(props: GraphProps) {
   });
 
   const lineInfo = {
-    average: {
+    intensity: {
       color: "orange",
       type: "line",
-      name: String(t("graph.averageLine")),
+      name: String(t("graph.intensityLine")),
     },
     forecast: {
       color: "#8884d8",
@@ -87,10 +87,10 @@ export default function Graph(props: GraphProps) {
       color: lineInfo.forecast.color,
     },
     {
-      value: lineInfo.average.name,
+      value: lineInfo.intensity.name,
       id: 2,
       type: "line",
-      color: lineInfo.average.color,
+      color: lineInfo.intensity.color,
     },
     {
       value: lineInfo.target.name,
@@ -158,10 +158,10 @@ export default function Graph(props: GraphProps) {
   const renderLineChart = (
     <LineChart width={graphWidth} height={300} data={data}>
       <Line
-        name={lineInfo.average.name}
+        name={lineInfo.intensity.name}
         type="monotone"
         dataKey="intensity"
-        stroke={lineInfo.average.color}
+        stroke={lineInfo.intensity.color}
       />
       <Line
         name={lineInfo.forecast.name}

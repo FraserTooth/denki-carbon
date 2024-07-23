@@ -47,11 +47,10 @@
     "line": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh"
   },
   "graph": {
-    "average": "Average",
     "intensity": "Carbon Intensity",
     "compare": "Compared Month",
     "forecast": "Today's Forecast",
-    "averageLine": "Average",
+    "intensityLine": "Historic Intensity",
     "forecastLine": "Forecast",
     "compareLine": "Compared Month",
     "targetLine": "2030 Target",
