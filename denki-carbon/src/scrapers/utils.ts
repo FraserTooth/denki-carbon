@@ -44,11 +44,30 @@ export const parseAverageMWFor30minToKwh = (raw: string): number => {
  * @param csv
  * @returns
  */
-export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const headerRow = csv.findIndex(
-    (row) => row[0].includes("DATE") || row[0].includes("年月日")
+export const parseNewCSV = (
+  csv: string[][],
+  config: {
+    dateFormat: string; // Only different for Kyuden
+    isTimeAtEndOfBlock: boolean; // Only different for Kyuden
+    flipInterconnectors: boolean; // Only different for Kyuden
+  } = {
+    dateFormat: "yyyy/M/d",
+    isTimeAtEndOfBlock: false,
+    flipInterconnectors: false,
+  }
+): AreaCSVDataProcessed[] => {
+  const headerRow = csv.findIndex((row) =>
+    ["DATE", "年月日"].includes(row[0].trim())
   );
-  const dataRows = csv.slice(headerRow + 1);
+  let startRow = headerRow + 1;
+  if (
+    // Skip first row if it is empty
+    csv[startRow].every((value) => value === "") ||
+    // or if it looks like another header row
+    csv[startRow].some((value) => value.includes("MW"))
+  )
+    startRow++;
+  const dataRows = csv.slice(startRow);
   const data: AreaCSVDataProcessed[] = [];
   dataRows.forEach((row) => {
     const [
@@ -77,21 +96,40 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     // Skip rows with missing data, which is expected on the "today" realtime value, totalAverageMW is a good indicator
     if (!totalDemandAverageMW) return;
 
-    const fromUTC = DateTime.fromFormat(
-      // "～" character only included in latest HEPCO file
-      `${date.trim()} ${time.trim().split("～")[0]}`,
-      "yyyy/M/d H:mm",
-      {
-        zone: "Asia/Tokyo",
+    const [fromUTC, toUTC] = (() => {
+      const timeCleaned = time
+        .trim()
+        .split("～")[0] // Handles HEPCOs weird format
+        .replaceAll(":00:00", ":00") // Remove randomly occuring seconds from time values, handles odd datapoints in the Kyuden CSVs
+        .replaceAll(":30:00", ":30"); // Remove randomly occuring seconds from time values, handles odd datapoints in the Kyuden CSVs
+
+      const datetimeForBlock = DateTime.fromFormat(
+        `${date.trim()} ${timeCleaned}`,
+        `${config.dateFormat} H:mm`,
+        {
+          zone: "Asia/Tokyo",
+        }
+      ).toUTC();
+      if (config.isTimeAtEndOfBlock) {
+        return [
+          datetimeForBlock.minus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
+          datetimeForBlock,
+        ];
+      } else {
+        return [
+          datetimeForBlock,
+          datetimeForBlock.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
+        ];
       }
-    ).toUTC();
+    })();
+
     const lngkWh = parseAverageMWFor30minToKwh(lngAverageMW);
     const coalkWh = parseAverageMWFor30minToKwh(coalAverageMW);
     const oilkWh = parseAverageMWFor30minToKwh(oilAverageMW);
     const otherFossilkWh = parseAverageMWFor30minToKwh(otherFossilAverageMW);
     const parsed = {
       fromUTC,
-      toUTC: fromUTC.plus({ minutes: NEW_CSV_FORMAT.intervalMinutes }),
+      toUTC,
       totalDemandkWh: parseAverageMWFor30minToKwh(totalDemandAverageMW),
       nuclearkWh: parseAverageMWFor30minToKwh(nuclearAverageMW),
       allfossilkWh: lngkWh + coalkWh + oilkWh + otherFossilkWh,
@@ -108,7 +146,9 @@ export const parseNewCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
       windThrottlingkWh: parseAverageMWFor30minToKwh(windThrottlingAverageMW),
       pumpedStoragekWh: parseAverageMWFor30minToKwh(pumpedStorageAverageMW),
       batteryStoragekWh: parseAverageMWFor30minToKwh(batteryStorageAverageMW),
-      interconnectorskWh: parseAverageMWFor30minToKwh(interconnectorsAverageMW),
+      interconnectorskWh:
+        parseAverageMWFor30minToKwh(interconnectorsAverageMW) *
+        (config.flipInterconnectors ? -1 : 1),
       otherkWh: parseAverageMWFor30minToKwh(otherAverageMW),
     };
     data.push({
@@ -321,10 +361,9 @@ export const saveAreaDataFile = async (file: AreaDataFileProcessed) => {
       const timeToStringJST = row.toUTC.setZone("Asia/Tokyo").toFormat("HH:mm");
       if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
         logger.error(
-          `Invalid row #${rowIndex} in ${file.url}:`,
-          JSON.stringify(row)
+          `Invalid row #${rowIndex} in ${file.url}: ${JSON.stringify(row)}`
         );
-        logger.error("rawRow:", JSON.stringify(file.raw[rowIndex]));
+        logger.error(`rawRow: ${JSON.stringify(file.raw[rowIndex])}`);
         throw new Error("Invalid date or time");
       }
       // Values that must be finite

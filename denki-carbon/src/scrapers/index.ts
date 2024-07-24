@@ -13,6 +13,7 @@ import { getHokudenAreaData } from "./hokuden";
 import { getKepcoAreaData } from "./kepco";
 import { getYondenAreaData } from "./yonden";
 import { saveAreaDataFile } from "./utils";
+import { getKyudenAreaData } from "./kyuden";
 
 /**
  * The type of scraping to perform
@@ -54,6 +55,8 @@ export const scrapeTso = async (
       return getKepcoAreaData(scrapeType);
     } else if (utility === JapanTsoName.YONDEN) {
       return getYondenAreaData(scrapeType);
+    } else if (utility === JapanTsoName.KYUDEN) {
+      return getKyudenAreaData(scrapeType);
     }
     throw new Error(`Utility ${utility} not supported`);
   })();
