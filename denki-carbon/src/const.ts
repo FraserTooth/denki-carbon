@@ -75,5 +75,5 @@ export const SUPPORTED_TSOS = [
   JapanTsoName.CHUGOKU,
   JapanTsoName.YONDEN,
   JapanTsoName.KYUDEN,
-  // JapanTsoName.OEPC,
+  JapanTsoName.OEPC,
 ];

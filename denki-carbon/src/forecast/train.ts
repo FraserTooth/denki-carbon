@@ -20,7 +20,7 @@ const startDatesByTso: Partial<Record<JapanTsoName, DateTime>> = {
   [JapanTsoName.CHUGOKU]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
   [JapanTsoName.YONDEN]: DateTime.fromISO("2024-03-01T00:00:00.000+09:00"),
   [JapanTsoName.KYUDEN]: DateTime.fromISO("2024-03-01T00:00:00.000+09:00"),
-  // OEPC
+  [JapanTsoName.OEPC]: DateTime.fromISO("2024-02-01T00:00:00.000+09:00"),
 };
 
 export const trainCarbonIntensityModel = async (tso: JapanTsoName) => {

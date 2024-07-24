@@ -133,15 +133,10 @@ export const getOkinawaAreaData = async (
               parser: parseOldCSV,
               ...OLD_CSV_FORMAT,
             }
-          : url.includes("zip")
-            ? {
-                parser: parseNewCSV,
-                ...NEW_CSV_FORMAT,
-              }
-            : {
-                parser: parseNewCSV,
-                ...NEW_CSV_FORMAT,
-              };
+          : {
+              parser: parseNewCSV,
+              ...NEW_CSV_FORMAT,
+            };
 
       logger.debug({ downloading: url });
 
