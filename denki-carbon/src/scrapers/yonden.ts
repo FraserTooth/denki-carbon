@@ -35,16 +35,6 @@ const parseDpToKwh = (raw: string): number => {
   }
 };
 
-const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const placeholders = ["－", ""];
-  if (placeholders.includes(raw)) return 0;
-  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in MW, so multiply by 1000 to get kW
-  const averageKw = parseFloat(cleaned) * 1000;
-  // Multiply by hours to get kWh
-  return averageKw * (30 / 60);
-};
-
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
   const headerRow = csv.findIndex((row) =>
     row[0].includes(OLD_CSV_FORMAT.firstHeader)
