@@ -13,7 +13,7 @@ export const supportedUtilities = [
   "kepco",
   "yonden",
   "kyuden",
-  // "okiden",
+  "okinawa",
 ] as const;
 
 export type Utilities = (typeof supportedUtilities)[number];

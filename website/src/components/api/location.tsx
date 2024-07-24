@@ -50,7 +50,7 @@ const utilityGeocoordinates = {
     latitude: 33.583333,
     longitude: 130.4,
   },
-  okiden: {
+  okinawa: {
     latitude: 26.245833,
     longitude: 127.721944,
   },
