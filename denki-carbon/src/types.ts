@@ -34,3 +34,9 @@ export type AreaDataFileProcessed = {
   raw: string[][]; // Raw CSV data
   data: AreaCSVDataProcessed[];
 };
+
+export type JapanInterconnectorDetails = {
+  pair: [JapanTsoName, JapanTsoName];
+  occtoName: string;
+  capacityMW: number;
+};
