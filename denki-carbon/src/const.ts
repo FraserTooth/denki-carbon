@@ -96,11 +96,10 @@ export enum JapanInterconnectors {
   KEPCO_CHUGOKU = "KEPCO_CHUGOKU",
   KEPCO_YONDEN = "KEPCO_YONDEN",
   CHUGOKU_YONDEN = "CHUGOKU_YONDEN",
-  KYUDEN_CHUGOKU = "KYUDEN_CHUGOKU",
+  CHUGOKU_KYUDEN = "CHUGOKU_KYUDEN",
 }
 /**
- * Details about the Japanese interconnectors
- *
+ * Details about the Japanese interconnector
  *
  * As listed in the OCCTO data:
  * "北海道・本州間電力連系設備", - 北海道-本州間
@@ -120,52 +119,63 @@ export const INTERCONNECTOR_DETAILS: Record<
   JapanInterconnectorDetails
 > = {
   [JapanInterconnectors.HEPCO_TOHOKU]: {
-    pair: [JapanTsoName.HEPCO, JapanTsoName.TOHOKU],
+    from: JapanTsoName.HEPCO,
+    to: JapanTsoName.TOHOKU,
     occtoName: "北海道・本州間電力連系設備",
     capacityMW: 900,
   },
   [JapanInterconnectors.TOHOKU_TEPCO]: {
-    pair: [JapanTsoName.TOHOKU, JapanTsoName.TEPCO],
+    from: JapanTsoName.TOHOKU,
+    to: JapanTsoName.TEPCO,
     occtoName: "相馬双葉幹線",
     capacityMW: 6050,
   },
   [JapanInterconnectors.TEPCO_CHUBU]: {
-    pair: [JapanTsoName.TEPCO, JapanTsoName.CHUBU],
+    from: JapanTsoName.TEPCO,
+    to: JapanTsoName.CHUBU,
     occtoName: "周波数変換設備",
     capacityMW: 2100,
   },
-  [JapanInterconnectors.CHUBU_HOKUDEN]: {
-    pair: [JapanTsoName.CHUBU, JapanTsoName.HOKUDEN],
-    occtoName: "南福光連系所・南福光変電所の連系設備",
-    capacityMW: 300,
-  },
   [JapanInterconnectors.CHUBU_KEPCO]: {
-    pair: [JapanTsoName.CHUBU, JapanTsoName.KEPCO],
+    from: JapanTsoName.CHUBU,
+    to: JapanTsoName.KEPCO,
     occtoName: "三重東近江線",
     capacityMW: 2500,
   },
+  [JapanInterconnectors.CHUBU_HOKUDEN]: {
+    from: JapanTsoName.CHUBU,
+    to: JapanTsoName.HOKUDEN,
+    occtoName: "南福光連系所・南福光変電所の連系設備",
+    capacityMW: 300,
+  },
+
   [JapanInterconnectors.HOKUDEN_KEPCO]: {
-    pair: [JapanTsoName.HOKUDEN, JapanTsoName.KEPCO],
+    from: JapanTsoName.HOKUDEN,
+    to: JapanTsoName.KEPCO,
     occtoName: "越前嶺南線",
     capacityMW: 1900,
   },
   [JapanInterconnectors.KEPCO_CHUGOKU]: {
-    pair: [JapanTsoName.KEPCO, JapanTsoName.CHUGOKU],
+    from: JapanTsoName.KEPCO,
+    to: JapanTsoName.CHUGOKU,
     occtoName: "西播東岡山線・山崎智頭線",
     capacityMW: 4250,
   },
   [JapanInterconnectors.KEPCO_YONDEN]: {
-    pair: [JapanTsoName.KEPCO, JapanTsoName.YONDEN],
+    from: JapanTsoName.KEPCO,
+    to: JapanTsoName.YONDEN,
     occtoName: "阿南紀北直流幹線",
     capacityMW: 1400,
   },
   [JapanInterconnectors.CHUGOKU_YONDEN]: {
-    pair: [JapanTsoName.CHUGOKU, JapanTsoName.YONDEN],
+    from: JapanTsoName.CHUGOKU,
+    to: JapanTsoName.YONDEN,
     occtoName: "本四連系線",
     capacityMW: 2400,
   },
-  [JapanInterconnectors.KYUDEN_CHUGOKU]: {
-    pair: [JapanTsoName.KYUDEN, JapanTsoName.CHUGOKU],
+  [JapanInterconnectors.CHUGOKU_KYUDEN]: {
+    from: JapanTsoName.CHUGOKU,
+    to: JapanTsoName.KYUDEN,
     occtoName: "関門連系線",
     capacityMW: 2780,
   },

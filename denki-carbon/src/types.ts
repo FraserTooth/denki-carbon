@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { JapanTsoName } from "./const";
+import { JapanInterconnectors, JapanTsoName } from "./const";
 
 export type AreaCSVDataProcessed = {
   fromUTC: DateTime;
@@ -34,9 +34,46 @@ export type AreaDataFileProcessed = {
   raw: string[][]; // Raw CSV data
   data: AreaCSVDataProcessed[];
 };
-
+/**
+ * The from/to pair defines the direction of the interconnector, so the flow is positive when
+ * power is flowing from the "from" TSO to the "to" TSO.
+ *
+ * Capacity is assumed bidirectional for now, its probably not the case in reality and
+ * the capacity is limited at any given time by heat and other factors. So its just a rough guide.
+ */
 export type JapanInterconnectorDetails = {
-  pair: [JapanTsoName, JapanTsoName];
+  /** The TSO from which Export is Positive in the OCCTO data */
+  from: JapanTsoName;
+  /** The TSO from which Export is Negative in the OCCTO data */
+  to: JapanTsoName;
+  /** The OCCTO name for the interconnector */
   occtoName: string;
+  /** The maximum MW at any one time the interconnecter can transmit */
   capacityMW: number;
+};
+
+export type RawOcctoInterconnectorData = {
+  /**
+   * Raw Name for the interconnector as listed in the data,
+   * its an annoying long technical name in Kanji, should match
+   * an occtoName value in INTERCONNECTOR_DETAILS
+   */
+  interconnectorNameRaw: string;
+  /** Format yyyy/MM/dd */
+  dateRaw: string;
+  /** Format HH:mm */
+  timeRaw: string;
+  /** The Interconnector Enum as matched to the raw data string */
+  interconnector: JapanInterconnectors;
+  /** Timestamp represents the END of the 5min period */
+  timestamp: DateTime;
+  /** Seems to be the Average Power througout the period */
+  powerMW: number;
+};
+
+export type InterconnectorDataProcessed = {
+  interconnector: JapanInterconnectors;
+  fromUTC: DateTime;
+  toUTC: DateTime;
+  flowkWh: number;
 };
