@@ -283,21 +283,74 @@ const getScrapeWindow = (
 
   const fromDatetime = (() => {
     if (scrapeType === ScrapeType.All) {
-      // April 1st the year before today, this is the earliest data available
-      return now.startOf("year").minus({ years: 1 }).set({ month: 4, day: 1 });
+      // Two April 1st's ago
+      return (
+        now
+          .startOf("day")
+          // If we are past April 1st this year, then we only need to go back 1 year, otherwise 2 years
+          .minus({ years: now.month >= 4 && now.day > 1 ? 1 : 2 })
+          .set({ month: 4, day: 1 })
+      );
     }
     if (scrapeType === ScrapeType.New) {
       // From the start of the last month, should be no more than 31 days
       return now.startOf("month").minus({ months: 1 });
     }
     if (scrapeType === ScrapeType.Latest) {
-      // From the start of the day
-      return now.startOf("day");
+      // From the start of the day before
+      return now.startOf("day").minus({ days: 1 });
     }
     throw Error("Invalid scrape type");
   })();
 
   return { fromDatetime, toDatetime };
+};
+
+/**
+ * Get OCCTO interconnector data
+ *
+ * @param axiosInstance
+ * @param fromDatetime
+ * @param toDatetime
+ * @param chunkNumber - used for logging
+ */
+const scrapeOcctoChunk = async (
+  axiosInstance: AxiosInstance,
+  fromDatetime: DateTime,
+  toDatetime: DateTime,
+  chunkNumber: number
+): Promise<InterconnectorDataProcessed[]> => {
+  logger.info(
+    `Scraping chunk #${chunkNumber} OCCTO interconnector data from ${fromDatetime.toISO()} to ${toDatetime.toISO()}`
+  );
+  const cookies = await getOcctoCookies(axiosInstance);
+  axiosInstance.defaults.headers.Cookie = cookies.join("; ");
+
+  logger.info(`Chunk #${chunkNumber}, got OCCTO cookies`);
+  const formData = await getDownloadForm(
+    axiosInstance,
+    fromDatetime,
+    toDatetime
+  );
+
+  logger.info(`Chunk #${chunkNumber}, got OCCTO download form`);
+  const rawCsv = await downloadFile(axiosInstance, formData);
+
+  // Parse raw data from the CSV without changing the format
+  const parsedData = parseCsv(rawCsv);
+
+  logger.info(
+    `Parsed chunk #${chunkNumber}, ${parsedData.length} lines of OCCTO data`
+  );
+
+  // Consolidate the 5min data into 30min data
+  const processedData = processData(parsedData, fromDatetime, toDatetime);
+
+  logger.info(
+    `Processed chunk #${chunkNumber}, ${processedData.length} lines of OCCTO data`
+  );
+
+  return processedData;
 };
 
 const scrapeOccto = async (scrapeType: ScrapeType) => {
@@ -307,29 +360,45 @@ const scrapeOccto = async (scrapeType: ScrapeType) => {
 
   const { fromDatetime, toDatetime } = getScrapeWindow(scrapeType);
 
-  logger.info("Scraping OCCTO interconnector data, logging in...");
-  const cookies = await getOcctoCookies(axiosInstance);
-  axiosInstance.defaults.headers.Cookie = cookies.join("; ");
-
-  logger.info("Getting download link...");
-  const formData = await getDownloadForm(
-    axiosInstance,
-    fromDatetime,
-    toDatetime
+  logger.info(
+    `Scraping OCCTO interconnector data from ${fromDatetime.toISO()} to ${toDatetime.toISO()}`
   );
 
-  logger.info("Downloading OCCTO interconnector data...");
-  const rawCsv = await downloadFile(axiosInstance, formData);
+  // OCCTO only allows 150000 lines of data, which works out to about 52 days
+  // So we need to scrape in chunks
+  const chunkSize = 45; // 45 days to give some wiggle room
+  const chunkIntervals = Interval.fromDateTimes(
+    fromDatetime,
+    toDatetime
+  ).splitBy({ days: chunkSize });
 
-  // Parse raw data from the CSV without changing the format
-  const parsedData = parseCsv(rawCsv);
+  logger.info(`Downloading data in ${chunkIntervals.length} chunks`);
 
-  logger.info(`Scraped OCCTO interconnector data, ${parsedData.length} lines`);
+  // Download the files one by one, takes ages but running in parrallel causes errors
+  const allData: InterconnectorDataProcessed[] = [];
+  for await (const [chunkNumber, interval] of chunkIntervals.entries()) {
+    const from = interval.start;
+    const to = interval.end;
+    if (!from || !from.isValid || !to || !to.isValid)
+      throw Error("Invalid chunk intervals");
+    try {
+      const processedData = await scrapeOcctoChunk(
+        axiosInstance,
+        from,
+        to,
+        chunkNumber
+      );
+      allData.push(...processedData);
+    } catch (e) {
+      logger.error(`Error in chunk #${chunkNumber}: ${e}`);
+      throw e;
+    }
+  }
 
-  // Consolidate the 5min data into 30min data
-  const processedData = processData(parsedData, fromDatetime, toDatetime);
+  logger.info(`Scraped OCCTO interconnector data, ${allData.length} lines`);
 
-  return processedData;
+  return allData;
 };
 
-// await scrapeOccto(ScrapeType.New);
+// await scrapeOccto(ScrapeType.All);
+// process.exit(0);
