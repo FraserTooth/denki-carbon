@@ -1,8 +1,8 @@
-import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
+import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../../types";
 import { DateTime } from "luxon";
-import { JapanTsoName } from "../const";
-import { ScrapeType } from ".";
-import { logger, onlyPositive } from "../utils";
+import { JapanTsoName } from "../../const";
+import { ScrapeType } from "..";
+import { logger, onlyPositive } from "../../utils";
 import {
   downloadCSV,
   getCSVUrlsFromPage,

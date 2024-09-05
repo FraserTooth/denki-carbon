@@ -1,6 +1,6 @@
-import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
-import { db } from "../db";
-import { areaDataFiles, areaDataProcessed } from "../schema";
+import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../../types";
+import { db } from "../../db";
+import { areaDataFiles, areaDataProcessed } from "../../schema";
 import { JSDOM } from "jsdom";
 import { parse } from "csv-parse/sync";
 import iconv from "iconv-lite";
@@ -10,7 +10,7 @@ import {
   conflictUpdateAllExcept,
   axiosInstance,
   onlyPositive,
-} from "../utils";
+} from "../../utils";
 import * as yauzlp from "yauzl-promise";
 import xlsx from "node-xlsx";
 import { AxiosError } from "axios";

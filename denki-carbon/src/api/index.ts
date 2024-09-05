@@ -2,10 +2,11 @@ import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { areaDataGetHandler, areaDataGetValidator } from "./get/areaData";
 import cron from "@elysiajs/cron";
-import { ScrapeType, scrapeJob } from "../scrapers";
+import { scrapeJob } from "../scrapers/tso";
 import { SUPPORTED_TSOS } from "../const";
 import { logger } from "../utils";
 import cors from "@elysiajs/cors";
+import { ScrapeType } from "../scrapers";
 
 const app = new Elysia({ normalize: true })
   .use(

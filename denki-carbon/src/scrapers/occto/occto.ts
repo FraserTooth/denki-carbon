@@ -2,13 +2,13 @@ import axios, { AxiosInstance } from "axios";
 import iconv from "iconv-lite";
 import { parse } from "csv-parse/sync";
 import { DateTime, Interval } from "luxon";
-import { INTERCONNECTOR_DETAILS, JapanInterconnectors } from "../const";
-import { logger } from "../utils";
+import { INTERCONNECTOR_DETAILS, JapanInterconnectors } from "../../const";
+import { logger } from "../../utils";
 import {
   InterconnectorDataProcessed,
   RawOcctoInterconnectorData,
-} from "../types";
-import { ScrapeType } from ".";
+} from "../../types";
+import { ScrapeType } from "..";
 
 const getOcctoCookies = async (axiosInstance: AxiosInstance) => {
   const response = await axiosInstance.get(

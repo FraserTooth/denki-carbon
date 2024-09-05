@@ -1,77 +1,58 @@
-import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
+import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../../types";
 import { DateTime } from "luxon";
-import { JapanTsoName } from "../const";
-import { ScrapeType } from ".";
-import { downloadCSV, NEW_CSV_FORMAT, parseNewCSV } from "./utils";
-import { axiosInstance, logger, onlyPositive } from "../utils";
+import { JapanTsoName } from "../../const";
+import { ScrapeType } from "..";
+import { logger, onlyPositive } from "../../utils";
+import {
+  downloadCSV,
+  getCSVUrlsFromPage,
+  NEW_CSV_FORMAT,
+  parseNewCSV,
+} from "./utils";
 
-const CSV_URL = `https://powergrid.chuden.co.jp/denkiyoho/resource/php/getFilesInfo.php`;
+const CSV_URL = `https://www.okiden.co.jp/business-support/service/supply-and-demand/index.html`;
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
   encoding: "Shift_JIS",
-  headerRows: 5,
+  headerRows: 9,
+  firstHeader: "DATE",
   intervalMinutes: 60,
 };
 
-/**
- * Chubu's CSV page is dynamically rendered, but we can just call the PHP script directly
- */
-const getChubuCSVUrls = async (): Promise<
-  {
-    url: string;
-    format: "old" | "new";
-  }[]
-> => {
-  const response = await axiosInstance.get(CSV_URL);
-
-  const data = (await response.data) as { category: string; path: string }[];
-  const areaData = data.filter(
-    (d) =>
-      d.category === "年別エリア需給実績" ||
-      d.category === "直近のエリア需要実績"
-  );
-
-  const urls: { url: string; format: "old" | "new" }[] = areaData.map((d) => {
-    const url = `https://powergrid.chuden.co.jp${d.path}`;
-    const format = d.path.includes("areabalance") ? "old" : "new";
-    return { url, format };
-  });
-  return urls;
-};
-
 const parseDpToKwh = (raw: string): number => {
+  // Return 0 for placeholder values
+  const placeholders = ["－", ""];
+  if (placeholders.includes(raw)) return 0;
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
 };
 
-const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in MW, so multiply by 1000 to get kW
-  const averageKw = parseFloat(cleaned) * 1000;
-  // Multiply by hours to get kWh
-  return averageKw * (30 / 60);
-};
-
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
-  const dataRows = csv.slice(OLD_CSV_FORMAT.headerRows);
+  const headerRow = csv.findIndex((row) =>
+    row[0].includes(OLD_CSV_FORMAT.firstHeader)
+  );
+
+  //   DATE	TIME	"エリアの需要実績"		エリアの供給実績
+  // 				火力	水力	バイオマス	太陽光		風力		合計
+  // 								"太陽光出力制御量"		"風力出力制御量"
+
+  // Header is spit over 3 rows, plus 1 empty row
+  const dataRows = csv.slice(headerRow + 4);
   const data: AreaCSVDataProcessed[] = dataRows.map((row) => {
     const [
       date, // "DATE"
       time, // "TIME"
-      totalDemand_MWh, // "エリア需要"
-      nuclear_MWh, // "原子力"
+      totalDemand_MWh, // "エリアの需要実績"
+      _emptyColumn, // <empty column>
       allfossil_MWh, // "火力"
       hydro_MWh, // "水力"
-      geothermal_MWh, // "地熱"
       biomass_MWh, // "バイオマス"
-      solarOutput_MWh, // "太陽光（実績）"
-      solarThrottling_MWh, // "太陽光（出力制御量）"
-      windOutput_MWh, // "風力（実績）"
-      windThrottling_MWh, // "風力（出力制御量）"
-      pumpedStorage_MWh, // "揚水"
-      interconnectors_MWh, // "連系線"
+      solarOutput_MWh, // "太陽光"
+      solarThrottling_MWh, // "太陽光出力制御量"
+      windOutput_MWh, // "風力"
+      windThrottling_MWh, // "風力出力制御量"
     ] = row;
     const fromUTC = DateTime.fromFormat(
       `${date.trim()} ${time.trim()}`,
@@ -80,56 +61,64 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
         zone: "Asia/Tokyo",
       }
     ).toUTC();
-
     const parsed = {
       fromUTC,
       toUTC: fromUTC.plus({ minutes: OLD_CSV_FORMAT.intervalMinutes }),
       totalDemandkWh: parseDpToKwh(totalDemand_MWh),
-      nuclearkWh: parseDpToKwh(nuclear_MWh),
       allfossilkWh: parseDpToKwh(allfossil_MWh),
       hydrokWh: parseDpToKwh(hydro_MWh),
-      geothermalkWh: parseDpToKwh(geothermal_MWh),
       biomasskWh: parseDpToKwh(biomass_MWh),
       solarOutputkWh: parseDpToKwh(solarOutput_MWh),
       solarThrottlingkWh: parseDpToKwh(solarThrottling_MWh),
       windOutputkWh: parseDpToKwh(windOutput_MWh),
       windThrottlingkWh: parseDpToKwh(windThrottling_MWh),
-      pumpedStoragekWh: parseDpToKwh(pumpedStorage_MWh),
-      interconnectorskWh: parseDpToKwh(interconnectors_MWh),
+      // The following items are not in the data source, so set to 0
+      nuclearkWh: 0,
+      geothermalkWh: 0,
+      pumpedStoragekWh: 0,
+      interconnectorskWh: 0,
     };
     return {
       ...parsed,
       // No total in the data, create it from generating and import sources
       totalGenerationkWh: [
-        parsed.nuclearkWh,
         parsed.allfossilkWh,
         parsed.hydrokWh,
-        parsed.geothermalkWh,
         parsed.biomasskWh,
         parsed.solarOutputkWh,
         parsed.windOutputkWh,
-        parsed.pumpedStoragekWh,
-        parsed.interconnectorskWh,
       ].reduce((acc, val) => acc + onlyPositive(val), 0),
     };
   });
+
   return data;
 };
 
-export const getChubuAreaData = async (
+export const getOkinawaAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
-  const allUrls = await getChubuCSVUrls();
+  const oldCsvUrls = await getCSVUrlsFromPage(
+    CSV_URL,
+    // e.g. ./jukyu/csv/2023.csv
+    // https://www.okiden.co.jp/business-support/service/supply-and-demand/jukyu/csv/2023.csv
+    RegExp(/jukyu\/csv\/\d{4}/),
+    "https://www.okiden.co.jp/business-support/service/supply-and-demand"
+  );
+  const oldUrls = oldCsvUrls.map((url) => ({ url, format: "old" }));
 
-  const oldUrls = allUrls.filter((u) => u.format === "old");
-  const newUrls = allUrls.filter((u) => u.format === "new");
+  const newCsvUrls = await getCSVUrlsFromPage(
+    CSV_URL,
+    // e.g. ./csv/eria_jukyu_202404_10.csv
+    // https://www.okiden.co.jp/business-support/service/supply-and-demand/csv/eria_jukyu_202402_10.csv
+    RegExp(/eria_jukyu_\d{6}_10\.csv/),
+    "https://www.okiden.co.jp/business-support/service/supply-and-demand"
+  );
+  const newUrls = newCsvUrls.map((url) => ({ url, format: "new" }));
 
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
     if (scrapeType === ScrapeType.New) return [...newUrls];
-    // Sort so that the latest file is last
-    if (scrapeType === ScrapeType.Latest)
-      return [newUrls.sort()[newUrls.length - 1]];
+    if (scrapeType === ScrapeType.Latest) return [newUrls[newUrls.length - 1]];
     throw new Error(`Invalid scrape type: ${scrapeType}`);
   })();
 
@@ -159,7 +148,7 @@ export const getChubuAreaData = async (
         days: data.length / blocksInDay,
       });
       return {
-        tso: JapanTsoName.CHUBU,
+        tso: JapanTsoName.OEPC,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,

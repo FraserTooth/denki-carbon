@@ -7,7 +7,6 @@ import {
   JapanInterconnectors,
   JapanTsoName,
 } from "./const";
-import graphlib from "graphlib";
 
 const run = async () => {
   console.log("running");

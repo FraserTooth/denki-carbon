@@ -1,8 +1,9 @@
 import { exit } from "process";
-import { JapanTsoName, SUPPORTED_TSOS } from "../const";
-import { ScrapeType, scrapeJob } from "./index";
+import { JapanTsoName, SUPPORTED_TSOS } from "../../const";
+import { ScrapeType } from "../index";
 import { program, Option } from "commander";
-import { logger } from "../utils";
+import { logger } from "../../utils";
+import { scrapeJob } from ".";
 
 program.exitOverride((err) => {
   logger.debug(err.code);

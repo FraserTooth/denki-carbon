@@ -1,8 +1,8 @@
-import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../types";
+import { AreaCSVDataProcessed, AreaDataFileProcessed } from "../../types";
 import { DateTime } from "luxon";
-import { JapanTsoName } from "../const";
-import { ScrapeType } from ".";
-import { logger, onlyPositive } from "../utils";
+import { JapanTsoName } from "../../const";
+import { ScrapeType } from "..";
+import { logger, onlyPositive } from "../../utils";
 import {
   downloadCSV,
   getCSVUrlsFromPage,
@@ -10,9 +10,9 @@ import {
   parseNewCSV,
 } from "./utils";
 
-const CSV_URL = `https://www.kyuden.co.jp/td_area_jukyu/jukyu.html`;
+const OLD_CSV_URL = `https://www.kansai-td.co.jp/denkiyoho/area-performance/past.html`;
 const LIVE_CSV_FILE_LIST_URL =
-  "https://www.kyuden.co.jp/td_area_jukyu/csv/eria_jukyu_nendo_list.csv";
+  "https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/filelist.json";
 
 const OLD_CSV_FORMAT = {
   blocksInDay: 24,
@@ -22,46 +22,48 @@ const OLD_CSV_FORMAT = {
   intervalMinutes: 60,
 };
 
-const START_OF_KYUDEN_LIVE_DATA = DateTime.fromISO(
-  "2024-03-01T00:00:00.000+09:00",
-  { zone: "Asia/Tokyo" }
-);
+type KepcoFileList = {
+  year: string;
+  list: {
+    name: string; // e.g. "eria_jukyu_202407_06.csv"
+    label: string;
+    size: number;
+  }[];
+};
+
+type KepcoFileListResponse = {
+  past: KepcoFileList[];
+  latest: KepcoFileList[];
+};
 
 /**
- * Kyuden's live CSV page (https://www.kyuden.co.jp/td_area_jukyu/jukyu.html) live renders
- * the available new files via an XHR request, so a basic scrape doesn't work.
+ * Kepcos's live CSV page (https://www.kansai-td.co.jp/denkiyoho/area-performance/index.html) uses Vue
+ * and live renders the file links, so a basic scrape doesn't work.
  * That said, we can simply ping the filelist endpoint the frontend uses to get the files.
- *
- * The file is actually a CSV, but we don't really need to parse it and can simply scrape the URLs from the text
  */
-const getKyudenNewCsvUrls = async (): Promise<
+const getKepcoNewCsvUrls = async (): Promise<
   {
     url: string;
     format: "old" | "new";
   }[]
 > => {
-  const now = DateTime.now().setZone("Asia/Tokyo");
-  // the slice matches the way the Kyuden frontend generates the timestamp
-  const timestampString = now.toMillis().toString().slice(0, -5);
-
-  const fileListResponse = await fetch(
-    `${LIVE_CSV_FILE_LIST_URL}?${timestampString}`
-  );
-  const fileList = await fileListResponse.text();
-  const regex = /eria_jukyu_\d{6}_09\.csv/g;
-  const rawUrls = fileList.match(regex);
-  if (!rawUrls) {
-    throw new Error("Failed to find any URLs in the file list");
-  }
+  const fileListResponse = await fetch(LIVE_CSV_FILE_LIST_URL);
+  const fileList = (await fileListResponse.json()) as KepcoFileListResponse;
+  const { past, latest } = fileList;
   const urls: {
     url: string;
     format: "old" | "new";
-  }[] = rawUrls.map((rawUrl) => ({
-    // raw format: e.g. eria_jukyu_202403_09.csv
-    // e.g. https://www.kyuden.co.jp/td_area_jukyu/csv/eria_jukyu_202404_09.csv?17217448
-    url: `https://www.kyuden.co.jp/td_area_jukyu/csv/${rawUrl}?${timestampString}`,
-    format: "new",
-  }));
+  }[] = [latest, past].flatMap((list) => {
+    return list.flatMap((set) => {
+      return set.list.map((file) => {
+        return {
+          // e.g. https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/eria_jukyu_202407_06.csv
+          url: `https://www.kansai-td.co.jp/interchange/denkiyoho/area-performance/${file.name}`,
+          format: "new",
+        };
+      });
+    });
+  });
 
   return urls.sort((a, b) => a.url.localeCompare(b.url));
 };
@@ -133,39 +135,24 @@ const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {
     };
   });
 
-  // Filter out anything before the start of the live data, if the first item in the file is from 2024
-  // This is because there is an overlap between the old and new formats, and we should only keep one
-  const filteredData =
-    data[0].fromUTC.year >= 2023
-      ? data.filter(
-          (dp) => dp.fromUTC.valueOf() < START_OF_KYUDEN_LIVE_DATA.valueOf()
-        )
-      : data;
-
-  return filteredData;
+  return data;
 };
 
-export const getKyudenAreaData = async (
+export const getKepcoAreaData = async (
   scrapeType: ScrapeType
 ): Promise<AreaDataFileProcessed[]> => {
   const oldCsvUrls = await getCSVUrlsFromPage(
-    CSV_URL,
-    // e.g. csv_area_jyukyu_jisseki/area_jyukyu_jisseki_H28_1Q.csv
-    // (format changes from Heiwa format "H28" to Roman format "2020" in the middle)
-    // https://www.kyuden.co.jp/td_area_jukyu/csv_area_jyukyu_jisseki/area_jyukyu_jisseki_2023_3Q.csv
-    RegExp(/area_jyukyu_jisseki\S+_\dQ\.csv/),
-    "https://www.kyuden.co.jp/td_area_jukyu/"
+    OLD_CSV_URL,
+    // e.g. ./csv/area_jyukyu_jisseki_2022.csv
+    // https://www.kansai-td.co.jp/denkiyoho/area-performance/csv/area_jyukyu_jisseki_2023.csv
+    RegExp(/area_jyukyu_jisseki_\d\d\d\d.csv/),
+    "https://www.kansai-td.co.jp/denkiyoho/area-performance"
   );
   const oldUrls = oldCsvUrls
     .map((url) => ({ url, format: "old" }))
-    .sort((a, b) =>
-      a.url
-        // Stupid hack, ensures all Heiwa formatted files come before Roman formatted files
-        .replaceAll("_H", "_00")
-        .localeCompare(b.url.replaceAll("_H", "_00"))
-    );
+    .sort((a, b) => a.url.localeCompare(b.url));
 
-  const newUrls = await getKyudenNewCsvUrls();
+  const newUrls = await getKepcoNewCsvUrls();
 
   const urlsToDownload = (() => {
     if (scrapeType === ScrapeType.All) return [...oldUrls, ...newUrls];
@@ -193,18 +180,14 @@ export const getKyudenAreaData = async (
       logger.debug({ downloading: url });
 
       const csv = await downloadCSV(url, encoding);
-      const data = parser(csv, {
-        dateFormat: "yyyyMMdd",
-        isTimeAtEndOfBlock: true,
-        flipInterconnectors: true,
-      });
+      const data = parser(csv);
       logger.debug({
         url: url,
         rows: data.length,
         days: data.length / blocksInDay,
       });
       return {
-        tso: JapanTsoName.KYUDEN,
+        tso: JapanTsoName.KEPCO,
         url,
         fromDatetime: data[0].fromUTC,
         toDatetime: data[data.length - 1].toUTC,
