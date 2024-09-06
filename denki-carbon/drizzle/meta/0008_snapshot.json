@@ -1,7 +1,5 @@
 {
-  "id": "2aea3951-34b4-437d-9eb8-bc582bc8e4dd",
-  "prevId": "828e6de0-dff6-4c46-a56a-04042acacc72",
-  "version": "6",
+  "version": "7",
   "dialect": "postgresql",
   "tables": {
     "public.area_data_files": {
@@ -337,18 +335,34 @@
       },
       "indexes": {
         "tso_idx": {
-          "name": "tso_idx",
           "columns": [
-            "tso"
+            {
+              "expression": "tso",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "tso_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         },
         "datetime_from_idx": {
-          "name": "datetime_from_idx",
           "columns": [
-            "datetime_utc"
+            {
+              "expression": "datetime_utc",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "datetime_from_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -376,8 +390,11 @@
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "2aea3951-34b4-437d-9eb8-bc582bc8e4dd",
+  "prevId": "828e6de0-dff6-4c46-a56a-04042acacc72",
+  "sequences": {}
 }

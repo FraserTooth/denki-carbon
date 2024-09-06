@@ -1,7 +1,5 @@
 {
-  "id": "731b91eb-17d0-40ca-99e9-3463b1b22be8",
-  "prevId": "bd80ac85-0282-4b21-b54f-53a56880b9ef",
-  "version": "6",
+  "version": "7",
   "dialect": "postgresql",
   "tables": {
     "public.area_data_files": {
@@ -337,33 +335,49 @@
       },
       "indexes": {
         "tso_idx": {
-          "name": "tso_idx",
           "columns": [
-            "tso"
+            {
+              "expression": "tso",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "tso_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         },
         "datetime_from_idx": {
-          "name": "datetime_from_idx",
           "columns": [
-            "datetime_utc"
+            {
+              "expression": "datetime_utc",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "datetime_from_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "carbon_intensity_forecasts_model_used_id_carbon_intensity_forecast_models_model_id_fk": {
           "name": "carbon_intensity_forecasts_model_used_id_carbon_intensity_forecast_models_model_id_fk",
           "tableFrom": "carbon_intensity_forecasts",
-          "tableTo": "carbon_intensity_forecast_models",
           "columnsFrom": [
             "model_used_id"
           ],
+          "tableTo": "carbon_intensity_forecast_models",
           "columnsTo": [
             "model_id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -390,8 +404,11 @@
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "731b91eb-17d0-40ca-99e9-3463b1b22be8",
+  "prevId": "bd80ac85-0282-4b21-b54f-53a56880b9ef",
+  "sequences": {}
 }

@@ -11,7 +11,7 @@ import {
   serial,
   index,
 } from "drizzle-orm/pg-core";
-import { JapanTsoName } from "./const";
+import { JapanInterconnectors, JapanTsoName } from "./const";
 import { NormalisationFactors } from "./forecast/types";
 
 /**
@@ -22,6 +22,10 @@ export const enumToPgEnum = (myEnum: any): [string, ...string[]] => {
 };
 
 export const tsoEnum = pgEnum("tso", enumToPgEnum(JapanTsoName));
+export const interconnectorEnum = pgEnum(
+  "interconnector",
+  enumToPgEnum(JapanInterconnectors)
+);
 
 export const areaDataFiles = pgTable("area_data_files", {
   fileKey: text("fileKey").primaryKey(),
@@ -78,6 +82,29 @@ export const areaDataProcessed = pgTable("area_data_processed", {
     .notNull()
     .defaultNow(),
 });
+
+export const interconnectorDataProcessed = pgTable(
+  "interconnector_data_processed",
+  {
+    dataId: text("data_id").primaryKey(),
+    interconnector: interconnectorEnum("interconnector").notNull(),
+    dateJST: date("date_jst", { mode: "string" }).notNull(),
+    timeFromJST: time("time_from_jst").notNull(),
+    timeToJST: time("time_to_jst").notNull(),
+    datetimeFrom: timestamp("datetime_from", {
+      withTimezone: true,
+    }).notNull(),
+    datetimeTo: timestamp("datetime_to", {
+      withTimezone: true,
+    }).notNull(),
+    powerkWh: numeric("power_kwh").notNull(),
+    lastUpdated: timestamp("last_updated", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+  }
+);
 
 export const carbonIntensityForecastModels = pgTable(
   "carbon_intensity_forecast_models",

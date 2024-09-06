@@ -1,7 +1,5 @@
 {
-  "id": "7ac74aa7-76dd-4e74-8c7a-648fd400d9dd",
-  "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "6",
+  "version": "7",
   "dialect": "postgresql",
   "tables": {
     "public.area_data_files": {
@@ -253,8 +251,11 @@
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "7ac74aa7-76dd-4e74-8c7a-648fd400d9dd",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "sequences": {}
 }

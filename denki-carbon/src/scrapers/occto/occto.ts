@@ -3,12 +3,14 @@ import iconv from "iconv-lite";
 import { parse } from "csv-parse/sync";
 import { DateTime, Interval } from "luxon";
 import { INTERCONNECTOR_DETAILS, JapanInterconnectors } from "../../const";
-import { logger } from "../../utils";
+import { conflictUpdateAllExcept, logger } from "../../utils";
 import {
   InterconnectorDataProcessed,
   RawOcctoInterconnectorData,
 } from "../../types";
 import { ScrapeType } from "..";
+import { interconnectorDataProcessed } from "../../schema";
+import { db } from "../../db";
 
 const getOcctoCookies = async (axiosInstance: AxiosInstance) => {
   const response = await axiosInstance.get(
@@ -249,15 +251,17 @@ const processData = (
             (acc, row) => acc + row.powerMW,
             0
           );
+          // Average - 6 blocks of 5min in each 30min period, also convert to kW
           const averagePowerkW = (totalPowerMW / 6) * 1000;
+          // Convert to kWh, 30min period is 0.5 hours
           const averagePowerkWh = averagePowerkW * 0.5;
           // Round to 3 decimal places
           const averagePowerRoundedkWh =
             Math.round(averagePowerkWh * 1000) / 1000;
           averagedData.push({
             interconnector: interconnectorGroup.interconnector,
-            fromUTC: group.interval.start,
-            toUTC: group.interval.end,
+            fromUTC: group.interval.start.toUTC(),
+            toUTC: group.interval.end.toUTC(),
             flowkWh: averagePowerRoundedkWh,
           });
         }
@@ -400,5 +404,70 @@ const scrapeOccto = async (scrapeType: ScrapeType) => {
   return allData;
 };
 
-// await scrapeOccto(ScrapeType.All);
-// process.exit(0);
+const saveOcctoData = async (data: InterconnectorDataProcessed[]) => {
+  let latestDatetimeSaved: DateTime | undefined;
+  const insertValues: (typeof interconnectorDataProcessed.$inferInsert)[] =
+    data.map((row, rowIndex) => {
+      // Update the latest datetime saved
+      if (!latestDatetimeSaved || row.fromUTC > latestDatetimeSaved) {
+        latestDatetimeSaved = row.fromUTC;
+      }
+
+      const dateStringJST = row.fromUTC.setZone("Asia/Tokyo").toISODate();
+      const timeFromStringJST = row.fromUTC
+        .setZone("Asia/Tokyo")
+        .toFormat("HH:mm");
+      const timeToStringJST = row.toUTC.setZone("Asia/Tokyo").toFormat("HH:mm");
+      if (!dateStringJST || !timeFromStringJST || !timeToStringJST) {
+        logger.error(`Invalid row #${rowIndex}: ${JSON.stringify(row)}`);
+        throw new Error("Invalid date or time");
+      }
+      return {
+        dataId: [row.interconnector, dateStringJST, timeFromStringJST].join(
+          "_"
+        ),
+        interconnector: row.interconnector,
+        dateJST: dateStringJST,
+        timeFromJST: timeFromStringJST,
+        timeToJST: timeToStringJST,
+        datetimeFrom: row.fromUTC.toJSDate(),
+        datetimeTo: row.toUTC.toJSDate(),
+        powerkWh: row.flowkWh.toString(),
+      };
+    });
+
+  logger.debug(
+    `Attempting insert of ${insertValues.length} rows for OCCTO interconnector data`
+  );
+  let insertedRowsCount = 0;
+  for (let i = 0; i < insertValues.length; i += 900) {
+    logger.debug(`Inserting rows ${i} to ${i + 900}`);
+    const insertBatch = insertValues.slice(i, i + 900);
+    const response = await db
+      .insert(interconnectorDataProcessed)
+      .values(insertBatch)
+      .onConflictDoUpdate({
+        target: interconnectorDataProcessed.dataId,
+        set: conflictUpdateAllExcept(interconnectorDataProcessed, ["dataId"]),
+      });
+    insertedRowsCount += response.rowCount ?? 0;
+  }
+  logger.debug(
+    `Inserted ${insertedRowsCount} rows for OCCTO interconnector data`
+  );
+
+  return { newRows: insertedRowsCount, latestDatetimeSaved };
+};
+
+export const scrapeJob = async (scrapeType: ScrapeType) => {
+  logger.info(`Running OCCTO scraper for ${scrapeType}`);
+
+  const data = await scrapeOccto(scrapeType);
+
+  // Load the data into the database
+  const { newRows, latestDatetimeSaved } = await saveOcctoData(data);
+
+  logger.info(
+    `OCCTO scraper finished, new rows: ${newRows}, latest datetime JST: ${latestDatetimeSaved?.toISO()}`
+  );
+};

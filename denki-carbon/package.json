@@ -18,6 +18,7 @@
     "up:debug": "docker-compose up  --force-recreate --build",
     "down": "docker-compose down",
     "scrape": "bun run ./src/scrapers/tso/cli.ts",
+    "scrapeOccto": "bun run ./src/scrapers/occto/cli.ts",
     "seed": "bun run scrape --tso all --scrape all --predict",
     "cron": "bun run scrape --tso all --scrape latest --predict",
     "train": "bun run ./src/forecast/cli.ts",

@@ -1,4 +1,6 @@
 {
+  "id": "3c1c39cd-2aeb-4404-801d-ea5d6d4a5167",
+  "prevId": "2aea3951-34b4-437d-9eb8-bc582bc8e4dd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -45,9 +47,9 @@
         },
         "last_updated": {
           "name": "last_updated",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         }
       },
@@ -211,17 +213,17 @@
           "primaryKey": false,
           "notNull": false
         },
-        "total_kwh": {
-          "name": "total_kwh",
+        "total_generation_kwh": {
+          "name": "total_generation_kwh",
           "type": "numeric",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "last_updated": {
           "name": "last_updated",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         }
       },
@@ -271,11 +273,162 @@
           "primaryKey": false,
           "notNull": true
         },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.carbon_intensity_forecasts": {
+      "name": "carbon_intensity_forecasts",
+      "schema": "",
+      "columns": {
+        "forecast_id": {
+          "name": "forecast_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tso": {
+          "name": "tso",
+          "type": "tso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_utc": {
+          "name": "datetime_utc",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_to": {
+          "name": "datetime_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "predicted_carbon_intensity": {
+          "name": "predicted_carbon_intensity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_used": {
+          "name": "model_used",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "tso_idx": {
+          "name": "tso_idx",
+          "columns": [
+            {
+              "expression": "tso",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "datetime_from_idx": {
+          "name": "datetime_from_idx",
+          "columns": [
+            {
+              "expression": "datetime_utc",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.interconnector_data_processed": {
+      "name": "interconnector_data_processed",
+      "schema": "",
+      "columns": {
+        "data_id": {
+          "name": "data_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "interconnector": {
+          "name": "interconnector",
+          "type": "interconnector",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_jst": {
+          "name": "date_jst",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_from_jst": {
+          "name": "time_from_jst",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_to_jst": {
+          "name": "time_to_jst",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_from": {
+          "name": "datetime_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datetime_to": {
+          "name": "datetime_to",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "power_kwh": {
+          "name": "power_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
           "default": "now()"
         }
       },
@@ -286,6 +439,22 @@
     }
   },
   "enums": {
+    "public.interconnector": {
+      "name": "interconnector",
+      "schema": "public",
+      "values": [
+        "HEPCO_TOHOKU",
+        "TOHOKU_TEPCO",
+        "TEPCO_CHUBU",
+        "CHUBU_HOKUDEN",
+        "CHUBU_KEPCO",
+        "HOKUDEN_KEPCO",
+        "KEPCO_CHUGOKU",
+        "KEPCO_YONDEN",
+        "CHUGOKU_YONDEN",
+        "CHUGOKU_KYUDEN"
+      ]
+    },
     "public.tso": {
       "name": "tso",
       "schema": "public",
@@ -304,12 +473,10 @@
     }
   },
   "schemas": {},
+  "sequences": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "id": "8703ad3d-7f40-4dc2-a4ec-e3274501cf2a",
-  "prevId": "bcd123d0-2b12-4564-96eb-04b891fb7c91",
-  "sequences": {}
+    "tables": {}
+  }
 }
