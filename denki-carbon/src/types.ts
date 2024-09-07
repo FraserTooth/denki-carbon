@@ -42,6 +42,7 @@ export type AreaDataFileProcessed = {
  * the capacity is limited at any given time by heat and other factors. So its just a rough guide.
  */
 export type JapanInterconnectorDetails = {
+  id: JapanInterconnectors;
   /** The TSO from which Export is Positive in the OCCTO data */
   from: JapanTsoName;
   /** The TSO from which Export is Negative in the OCCTO data */

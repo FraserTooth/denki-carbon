@@ -108,9 +108,9 @@ export const gCO2BySource = (source: GenerationSource) => {
 };
 
 export const getTotalCarbonIntensityForAreaDataRow = (
-  row: typeof areaDataProcessed.$inferSelect
+  row: typeof areaDataProcessed.$inferSelect,
+  c02ForInterconnectors: number = gCO2BySource(GenerationSource.INTERCONNECTORS)
 ): number => {
-  row;
   const {
     tso,
     nuclearkWh,
@@ -154,8 +154,7 @@ export const getTotalCarbonIntensityForAreaDataRow = (
         parseFloat(windOutputkWh ?? "0") * gCO2BySource(GenerationSource.WIND),
         parseFloat(pumpedStoragekWh ?? "0") *
           gCO2BySource(GenerationSource.PUMPED_HYDRO),
-        parseFloat(interconnectorskWh ?? "0") *
-          gCO2BySource(GenerationSource.INTERCONNECTORS),
+        parseFloat(interconnectorskWh ?? "0") * c02ForInterconnectors,
         parseFloat(batteryStoragekWh ?? "0") *
           gCO2BySource(GenerationSource.BATTERY),
         parseFloat(otherkWh ?? "0") * gCO2BySource(GenerationSource.OTHER),
@@ -184,8 +183,7 @@ export const getTotalCarbonIntensityForAreaDataRow = (
         parseFloat(windOutputkWh ?? "0") * gCO2BySource(GenerationSource.WIND),
         parseFloat(pumpedStoragekWh ?? "0") *
           gCO2BySource(GenerationSource.PUMPED_HYDRO),
-        parseFloat(interconnectorskWh ?? "0") *
-          gCO2BySource(GenerationSource.INTERCONNECTORS),
+        parseFloat(interconnectorskWh ?? "0") * c02ForInterconnectors,
         parseFloat(batteryStoragekWh ?? "0") *
           gCO2BySource(GenerationSource.BATTERY),
         parseFloat(otherkWh ?? "0") * gCO2BySource(GenerationSource.OTHER),

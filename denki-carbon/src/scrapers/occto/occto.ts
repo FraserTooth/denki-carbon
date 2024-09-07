@@ -126,13 +126,10 @@ const parseCsv = (rawCsv: string[][]): RawOcctoInterconnectorData[] => {
     const powerMW = parseFloat(row[13]);
 
     // Match the interconnector name to the enum
-    const interconnector = Object.values(JapanInterconnectors).find((ic) => {
-      return (
-        INTERCONNECTOR_DETAILS[ic as JapanInterconnectors].occtoName ===
-        interconnectorNameRaw
-      );
+    const interconnectorDetails = INTERCONNECTOR_DETAILS.find((ic) => {
+      return ic.occtoName === interconnectorNameRaw;
     });
-    if (!interconnector) {
+    if (!interconnectorDetails) {
       logger.error(
         `Could not find interconnector for ${interconnectorNameRaw}`
       );
@@ -154,7 +151,7 @@ const parseCsv = (rawCsv: string[][]): RawOcctoInterconnectorData[] => {
       dateRaw,
       timeRaw,
       timestamp,
-      interconnector,
+      interconnector: interconnectorDetails.id,
       powerMW,
     };
   });
