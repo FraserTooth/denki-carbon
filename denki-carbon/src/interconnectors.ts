@@ -303,20 +303,51 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
   ): number => {
     const importingNodes = node.importingFrom;
 
-    // console.log({ node, importingNodes });
-
     const intensityForImportingTsos = importingNodes.map((importingTso) => {
       const node = graphWithTrimmedCircles.find(
         (node) => node.tso === importingTso
       );
       if (!node) throw new Error(`Node not found: ${importingTso}`);
-      return calculateCarbonForNode(node, [...visitedNodesInPath, node.tso]);
+
+      const interconnector = node.interconnectors.find((ic) => {
+        const details = INTERCONNECTOR_DETAILS.find((icd) => icd.id === ic);
+        if (!details) throw new Error(`No details for ${ic}`);
+        return details.from === importingTso || details.to === importingTso;
+      });
+      if (!interconnector)
+        throw new Error(`No interconnector for ${importingTso}`);
+      const interconnectorDataRow = interconnectorDataResult.find(
+        (data) =>
+          (data.interconnector as JapanInterconnectors) === interconnector
+      );
+      if (!interconnectorDataRow)
+        throw new Error(
+          `No data for ${interconnector} at ${datetimeFrom.toString()}`
+        );
+
+      return {
+        tso: importingTso,
+        intensity: calculateCarbonForNode(node, [
+          ...visitedNodesInPath,
+          node.tso,
+        ]),
+        icFlowKwh: Number(interconnectorDataRow.powerkWh),
+      };
     });
 
-    // Calculate the average intensity for the importing nodes
-    const averageIntensityForImports =
-      intensityForImportingTsos.reduce((acc, intensity) => acc + intensity, 0) /
-      intensityForImportingTsos.length;
+    // Calculate the weighted average intensity for the importing nodes based on size of imports
+    // Note, that any concerns about the disparity between the OCCTO and area data are not considered here
+    // as we only use OCCTO data to get the weighting
+    const totalImportKwh = intensityForImportingTsos.reduce(
+      (acc, intensity) => acc + Math.abs(intensity.icFlowKwh),
+      0
+    );
+    const weightedAverageIntensity = intensityForImportingTsos.reduce(
+      (acc, intensity) =>
+        acc +
+        (Math.abs(intensity.icFlowKwh) / totalImportKwh) * intensity.intensity,
+      0
+    );
 
     const areaDataRow = areaDataResult.find((row) => {
       return (row.tso as JapanTsoName) === node.tso;
@@ -325,9 +356,9 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
 
     const carbonIntensity = getTotalCarbonIntensityForAreaDataRow(
       areaDataRow,
-      !Number.isFinite(averageIntensityForImports)
+      !Number.isFinite(weightedAverageIntensity)
         ? undefined
-        : averageIntensityForImports
+        : weightedAverageIntensity
     );
 
     // Push to tracker
