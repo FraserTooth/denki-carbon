@@ -10,22 +10,30 @@ import {
 import { logger } from "./utils";
 import { getTotalCarbonIntensityForAreaDataRow } from "./carbon";
 
-const getCarbonIntensitiesUsingInterconnectorData = async () => {
-  console.log("running");
+/**
+ * The limit for flows, if the power is above this value
+ * then it is considered to be exporting, otherwise importing.
+ *
+ * This simplifies the logic for determining the direction of the flow and helps avoid
+ * circular dependencies in the graph.
+ *
+ * As a note, this value would only represent about 0.5% of the total generation for even the smallest TSOs.
+ */
+const KWH_LIMIT_FOR_FLOW_CALC = 1000;
 
-  const datetimeFrom = DateTime.fromISO("2024-02-01T18:00:00.000+09:00");
-  // const datetimeFrom = DateTime.fromISO("2024-05-01T21:00:00.000+09:00");
-
+const getCarbonIntensitiesUsingInterconnectorData = async (
+  datetimeFrom: DateTime
+) => {
   // Get data for all TSOs for one HH period
   const areaDataResult = await db
     .select()
     .from(areaDataProcessed)
     .where(eq(areaDataProcessed.datetimeFrom, datetimeFrom.toJSDate()));
 
-  // console.log(areaDataResult);
-  areaDataResult.forEach((row) => {
-    console.log(row.tso, row.interconnectorskWh);
-  });
+  // Temporarily log area data, REMOVE
+  // areaDataResult.forEach((row) => {
+  //   console.log(row.tso, row.interconnectorskWh);
+  // });
 
   // Get interconnector data for same HH period
   const interconnectorDataResult = await db
@@ -35,10 +43,10 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
       eq(interconnectorDataProcessed.datetimeFrom, datetimeFrom.toJSDate())
     );
 
-  // console.log(interconnectorDataResult);
-  interconnectorDataResult.forEach((row) => {
-    console.log(row.interconnector, row.powerkWh);
-  });
+  // Temporarily log interconnector data, REMOVE
+  // interconnectorDataResult.forEach((row) => {
+  //   console.log(row.interconnector, row.powerkWh);
+  // });
 
   // Build graph based on direction of interconnector flow
   const graph = areaDataResult.map((row) => {
@@ -78,11 +86,14 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
 
     const exportingTo = interconnecterFlows
       .filter((flow) => {
-        if (flow.interconnectorDetails.from === row.tso && flow.powerkWh >= 0) {
+        if (
+          flow.interconnectorDetails.from === row.tso &&
+          flow.powerkWh >= KWH_LIMIT_FOR_FLOW_CALC
+        ) {
           return true;
         } else if (
           flow.interconnectorDetails.to === row.tso &&
-          flow.powerkWh < 0
+          flow.powerkWh < -KWH_LIMIT_FOR_FLOW_CALC
         ) {
           return true;
         }
@@ -97,11 +108,14 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
     // Opposite of exportingTo
     const importingFrom = interconnecterFlows
       .filter((flow) => {
-        if (flow.interconnectorDetails.from === row.tso && flow.powerkWh < 0) {
+        if (
+          flow.interconnectorDetails.from === row.tso &&
+          flow.powerkWh < -KWH_LIMIT_FOR_FLOW_CALC
+        ) {
           return true;
         } else if (
           flow.interconnectorDetails.to === row.tso &&
-          flow.powerkWh >= 0
+          flow.powerkWh >= KWH_LIMIT_FOR_FLOW_CALC
         ) {
           return true;
         }
@@ -122,9 +136,9 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
   });
 
   logger.debug(
-    graph
+    `Paths: ${graph
       .map((node) => `${node.tso} -> ${node.exportingTo.join(" & ")}`)
-      .join(", ")
+      .join(", ")}`
   );
 
   const onlyImportingNodes = graph.filter(
@@ -132,33 +146,177 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
   );
 
   logger.debug(
-    onlyImportingNodes
+    `Only Importing: ${onlyImportingNodes
       .map((node) => `${node.tso} <- ${node.importingFrom.join(" & ")}`)
-      .join(", ")
+      .join(", ")}`
   );
+
+  const circularDependencyPaths: JapanTsoName[][] = [];
+
+  // Detect circular dependencies for node import paths
+  const detectCircularDependencies = (
+    node: (typeof graph)[0],
+    visitedNodesInPath: JapanTsoName[]
+  ) => {
+    if (visitedNodesInPath.includes(node.tso)) {
+      // Circular dependency detected
+      return visitedNodesInPath.slice(visitedNodesInPath.indexOf(node.tso));
+    }
+    const paths = node.importingFrom.map((importingTso) => {
+      const importingNode = graph.find((node) => node.tso === importingTso);
+      if (!importingNode) throw new Error(`Node not found: ${importingTso}`);
+      return detectCircularDependencies(importingNode, [
+        ...visitedNodesInPath,
+        node.tso,
+      ]);
+    });
+    const circles = paths.filter((path) => path !== null);
+    if (circles.length > 0) {
+      circularDependencyPaths.push(circles.flat());
+    }
+    return null;
+  };
+
+  onlyImportingNodes.forEach((node) => {
+    detectCircularDependencies(node, []);
+  });
+
+  // Remove duplicate circular paths
+  const uniqueCircularPaths = Array.from(
+    new Set(circularDependencyPaths.map((path) => path.join(" -> ")))
+  ).map((path) => path.split(" -> ")) as JapanTsoName[][];
+
+  logger.debug(
+    `Circular Dependencies: ${uniqueCircularPaths
+      .map((path) => path.join(" -> "))
+      .join(", ")}`
+  );
+
+  const lowestPowerInterconnectorInCircularPaths = uniqueCircularPaths.map(
+    (path) => {
+      const interconnectorsInCircle = path
+        .map((tso) => graph.find((node) => node.tso === tso))
+        .map((node) => node?.interconnectors)
+        .flat()
+        .filter((interconnector) => interconnector !== undefined)
+        .filter((ic) => {
+          const details = INTERCONNECTOR_DETAILS.find((icd) => icd.id === ic);
+          if (!details) throw new Error(`No details for ${ic}`);
+          return path.includes(details.from) && path.includes(details.to);
+        });
+
+      const uniqueInterconnectorsInCircle = Array.from(
+        new Set(interconnectorsInCircle)
+      );
+
+      const interconnecterFlows = uniqueInterconnectorsInCircle.map(
+        (interconnector) => {
+          const interconnectorData = interconnectorDataResult.find(
+            (data) =>
+              (data.interconnector as JapanInterconnectors) === interconnector
+          );
+          if (!interconnectorData)
+            throw new Error(
+              `No data for ${interconnector} at ${datetimeFrom.toString()}`
+            );
+
+          return {
+            interconnector,
+            interconnectorDetails: INTERCONNECTOR_DETAILS.find(
+              (ic) => ic.id === interconnector
+            )!,
+            powerkWh: Number(interconnectorData.powerkWh),
+          };
+        }
+      );
+
+      return interconnecterFlows.sort(
+        (a, b) => Math.abs(a.powerkWh) - Math.abs(b.powerkWh)
+      )[0];
+    }
+  );
+
+  logger.debug(
+    `Lowest Power Interconnectors: ${lowestPowerInterconnectorInCircularPaths
+      .map(
+        (interconnector) =>
+          `${interconnector.interconnectorDetails.from} -> ${interconnector.interconnectorDetails.to} (${interconnector.powerkWh})`
+      )
+      .join(", ")}`
+  );
+
+  // lowestPowerInterconnectorInCircularPaths.forEach((ic) => {
+  //   // Log the percentage of the total generation for the consuming TSO
+  //   const { to, from } = ic.interconnectorDetails;
+
+  //   const node = graph.find((node) => node.tso === to || node.tso === from);
+  //   if (
+  //     node?.importingFrom.includes(from) ||
+  //     node?.importingFrom.includes(to)
+  //   ) {
+  //     const areaDataRow = areaDataResult.find((row) => row.tso === node.tso);
+  //     console.log(
+  //       `Percentage of total generation for ${node.tso} by area data: ${
+  //         (Number(areaDataRow?.interconnectorskWh) /
+  //           Number(areaDataRow?.totalGenerationkWh)) *
+  //         100
+  //       }% and interconnector power: ${(ic.powerkWh / Number(areaDataRow?.totalGenerationkWh)) * 100}%`
+  //     );
+  //   }
+  // });
+
+  // Trim interconnector in circular path with lowest power
+  const graphWithTrimmedCircles = graph.map((node) => {
+    const interconnectorWithLowestPower =
+      lowestPowerInterconnectorInCircularPaths.find((interconnector) =>
+        node.interconnectors.includes(interconnector.interconnector)
+      );
+    if (!interconnectorWithLowestPower) return node;
+
+    const { from, to } = interconnectorWithLowestPower.interconnectorDetails;
+
+    const updatedImports = node.importingFrom.filter(
+      (importingTso) => ![from, to].includes(importingTso)
+    );
+    const updatedExports = node.exportingTo.filter(
+      (exportingTso) => ![from, to].includes(exportingTso)
+    );
+
+    return {
+      ...node,
+      importingFrom: updatedImports,
+      exportingTo: updatedExports,
+    };
+  });
+
+  // console.log({ graph, graphWithTrimmedCircles });
 
   const carbonIntensitiesTracker: Map<JapanTsoName, number> = new Map<
     JapanTsoName,
     number
   >();
 
-  const calculateCarbonForNode = (node: (typeof graph)[0]): number => {
+  // Recursive function to calculate carbon intensity for a given node and its importing nodes
+  const calculateCarbonForNode = (
+    node: (typeof graphWithTrimmedCircles)[0],
+    visitedNodesInPath: JapanTsoName[]
+  ): number => {
     const importingNodes = node.importingFrom;
 
+    // console.log({ node, importingNodes });
+
     const intensityForImportingTsos = importingNodes.map((importingTso) => {
-      const node = graph.find((node) => node.tso === importingTso);
+      const node = graphWithTrimmedCircles.find(
+        (node) => node.tso === importingTso
+      );
       if (!node) throw new Error(`Node not found: ${importingTso}`);
-      return calculateCarbonForNode(node);
+      return calculateCarbonForNode(node, [...visitedNodesInPath, node.tso]);
     });
 
     // Calculate the average intensity for the importing nodes
     const averageIntensityForImports =
       intensityForImportingTsos.reduce((acc, intensity) => acc + intensity, 0) /
       intensityForImportingTsos.length;
-
-    console.log(
-      `Average intensity for ${node.tso}: ${averageIntensityForImports}`
-    );
 
     const areaDataRow = areaDataResult.find((row) => {
       return (row.tso as JapanTsoName) === node.tso;
@@ -179,7 +337,7 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
   };
 
   onlyImportingNodes.forEach((node) => {
-    calculateCarbonForNode(node);
+    calculateCarbonForNode(node, [node.tso]);
   });
 
   // Logging and comparison -
@@ -208,6 +366,27 @@ const getCarbonIntensitiesUsingInterconnectorData = async () => {
   );
 };
 
-// const output = await getCarbonIntensitiesUsingInterconnectorData();
-// console.log(output);
+// const datetimeFrom = DateTime.fromISO("2024-02-01T18:00:00.000+09:00");
+// const datetimeFrom = DateTime.fromISO("2024-05-01T21:00:00.000+09:00");
+
+// const output = await getCarbonIntensitiesUsingInterconnectorData(datetimeFrom);
+
+// For every HH period from 2023-04-01
+// const datetimeFromStart = DateTime.fromISO("2023-04-01T00:00:00.000+09:00");
+// const datetimeFromEnd = DateTime.fromISO("2024-09-07T00:00:00.000+09:00");
+
+// let datetimeFrom = datetimeFromStart;
+// while (datetimeFrom < datetimeFromEnd) {
+//   if (datetimeFrom.hour === 0) {
+//     console.log(datetimeFrom.toISO());
+//   }
+//   const output =
+//     await getCarbonIntensitiesUsingInterconnectorData(datetimeFrom);
+//   datetimeFrom = datetimeFrom.plus({ minutes: 30 });
+// }
+
+// await getCarbonIntensitiesUsingInterconnectorData(
+//   DateTime.fromISO("2023-04-09T01:00:00.000+09:00")
+// );
+
 // process.exit(0);
