@@ -1,11 +1,12 @@
 import { DateTime } from "luxon";
 import { db } from "./db";
 import { areaDataProcessed, interconnectorDataProcessed } from "./schema";
-import { eq } from "drizzle-orm";
+import { eq, between } from "drizzle-orm";
 import {
   INTERCONNECTOR_DETAILS,
   JapanInterconnectors,
   JapanTsoName,
+  DataError,
 } from "./const";
 import { logger } from "./utils";
 import { getTotalCarbonIntensityForAreaDataRow } from "./carbon";
@@ -30,11 +31,6 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
     .from(areaDataProcessed)
     .where(eq(areaDataProcessed.datetimeFrom, datetimeFrom.toJSDate()));
 
-  // Temporarily log area data, REMOVE
-  // areaDataResult.forEach((row) => {
-  //   console.log(row.tso, row.interconnectorskWh);
-  // });
-
   // Get interconnector data for same HH period
   const interconnectorDataResult = await db
     .select()
@@ -43,10 +39,27 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
       eq(interconnectorDataProcessed.datetimeFrom, datetimeFrom.toJSDate())
     );
 
-  // Temporarily log interconnector data, REMOVE
-  // interconnectorDataResult.forEach((row) => {
-  //   console.log(row.interconnector, row.powerkWh);
-  // });
+  // Check if data is missing
+  if (areaDataResult.length === 0)
+    throw new DataError(`No area data for ${datetimeFrom.toString()}`);
+  if (
+    areaDataResult.map((row) => row.tso).length !==
+    INTERCONNECTOR_DETAILS.length
+  )
+    throw new DataError(
+      `Missing area data for some TSOs for ${datetimeFrom.toString()}`
+    );
+  if (interconnectorDataResult.length === 0)
+    throw new DataError(
+      `No interconnector data for ${datetimeFrom.toString()}`
+    );
+  if (
+    interconnectorDataResult.map((row) => row.interconnector).length !==
+    INTERCONNECTOR_DETAILS.length
+  )
+    throw new DataError(
+      `Missing interconnector data for some interconnectors for ${datetimeFrom.toString()}`
+    );
 
   // Build graph based on direction of interconnector flow
   const graph = areaDataResult.map((row) => {
@@ -230,9 +243,11 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
         }
       );
 
-      return interconnecterFlows.sort(
+      const sortedFlows = interconnecterFlows.sort(
         (a, b) => Math.abs(a.powerkWh) - Math.abs(b.powerkWh)
-      )[0];
+      );
+
+      return sortedFlows[0];
     }
   );
 
@@ -244,26 +259,6 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
       )
       .join(", ")}`
   );
-
-  // lowestPowerInterconnectorInCircularPaths.forEach((ic) => {
-  //   // Log the percentage of the total generation for the consuming TSO
-  //   const { to, from } = ic.interconnectorDetails;
-
-  //   const node = graph.find((node) => node.tso === to || node.tso === from);
-  //   if (
-  //     node?.importingFrom.includes(from) ||
-  //     node?.importingFrom.includes(to)
-  //   ) {
-  //     const areaDataRow = areaDataResult.find((row) => row.tso === node.tso);
-  //     console.log(
-  //       `Percentage of total generation for ${node.tso} by area data: ${
-  //         (Number(areaDataRow?.interconnectorskWh) /
-  //           Number(areaDataRow?.totalGenerationkWh)) *
-  //         100
-  //       }% and interconnector power: ${(ic.powerkWh / Number(areaDataRow?.totalGenerationkWh)) * 100}%`
-  //     );
-  //   }
-  // });
 
   // Trim interconnector in circular path with lowest power
   const graphWithTrimmedCircles = graph.map((node) => {
@@ -288,8 +283,6 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
       exportingTo: updatedExports,
     };
   });
-
-  // console.log({ graph, graphWithTrimmedCircles });
 
   const carbonIntensitiesTracker: Map<JapanTsoName, number> = new Map<
     JapanTsoName,
@@ -403,21 +396,19 @@ const getCarbonIntensitiesUsingInterconnectorData = async (
 // const output = await getCarbonIntensitiesUsingInterconnectorData(datetimeFrom);
 
 // For every HH period from 2023-04-01
-// const datetimeFromStart = DateTime.fromISO("2023-04-01T00:00:00.000+09:00");
-// const datetimeFromEnd = DateTime.fromISO("2024-09-07T00:00:00.000+09:00");
+// const datetimeFromStart = DateTime.fromISO("2024-04-01T00:00:00.000+09:00");
+// const datetimeFromEnd = DateTime.fromISO("2024-10-01T00:00:00.000+09:00");
 
 // let datetimeFrom = datetimeFromStart;
 // while (datetimeFrom < datetimeFromEnd) {
-//   if (datetimeFrom.hour === 0) {
-//     console.log(datetimeFrom.toISO());
-//   }
+//   console.log(datetimeFrom.toISO());
 //   const output =
 //     await getCarbonIntensitiesUsingInterconnectorData(datetimeFrom);
 //   datetimeFrom = datetimeFrom.plus({ minutes: 30 });
 // }
 
 // await getCarbonIntensitiesUsingInterconnectorData(
-//   DateTime.fromISO("2023-04-09T01:00:00.000+09:00")
+//   DateTime.fromISO("2024-10-07T01:00:00.000+09:00")
 // );
 
 // process.exit(0);

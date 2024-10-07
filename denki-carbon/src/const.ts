@@ -186,3 +186,15 @@ export const INTERCONNECTOR_DETAILS: JapanInterconnectorDetails[] = [
     capacityMW: 2780,
   },
 ];
+
+/**
+ * Error for when data is missing or incorrect.
+ * We typically want to skip dates with missing data and continue processing due to common upstream issues with the data sources.
+ * So this error is not fatal and should be handled accordingly.
+ */
+export class DataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DataError";
+  }
+}

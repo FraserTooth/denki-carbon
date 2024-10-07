@@ -229,27 +229,35 @@ const processData = (
           logger.error(`Invalid interval ${group.interval}`);
           throw Error("Invalid interval");
         }
+        // Check that we have 6 rows per interval
         if (group.data.length !== 6) {
           logger.error(
             `Missing data for ${group.interval.start.toISO()} to ${group.interval.end?.toISO()}`
           );
-          throw Error("Missing data for interval group");
+          throw Error("Missing rows for interval group");
         }
-        if (group.data.some((row) => !Number.isFinite(row.powerMW))) {
+        // If row end is after "now" or
+        // If less than 2 rows have valid power values,
+        // skip this interval
+        const rowsWithValidPowerValues = group.data.filter((row) =>
+          Number.isFinite(row.powerMW)
+        );
+        if (group.interval.end > now || rowsWithValidPowerValues.length <= 2) {
           // Skip this interval
-          if (group.interval.start < now) {
-            // Only debug log if the interval has already started to reduce log spam
+          if (group.interval.end < now) {
+            // Only debug log if the interval is in the past to reduce log spam
             logger.debug(
               `Skipping interval for ${interconnectorGroup.interconnector} starting ${group.interval.start.toString()} with invalid power values: ${group.data.map((row) => row.powerMW)}`
             );
           }
         } else {
-          const totalPowerMW = group.data.reduce(
+          const totalPowerMW = rowsWithValidPowerValues.reduce(
             (acc, row) => acc + row.powerMW,
             0
           );
-          // Average - 6 blocks of 5min in each 30min period, also convert to kW
-          const averagePowerkW = (totalPowerMW / 6) * 1000;
+          // Average the power values and convert to kW
+          const averagePowerkW =
+            (totalPowerMW / rowsWithValidPowerValues.length) * 1000;
           // Convert to kWh, 30min period is 0.5 hours
           const averagePowerkWh = averagePowerkW * 0.5;
           // Round to 3 decimal places
@@ -402,12 +410,12 @@ const scrapeOccto = async (scrapeType: ScrapeType) => {
 };
 
 const saveOcctoData = async (data: InterconnectorDataProcessed[]) => {
-  let latestDatetimeSaved: DateTime | undefined;
+  let latestDatetimeSavedUTC: DateTime | undefined;
   const insertValues: (typeof interconnectorDataProcessed.$inferInsert)[] =
     data.map((row, rowIndex) => {
       // Update the latest datetime saved
-      if (!latestDatetimeSaved || row.fromUTC > latestDatetimeSaved) {
-        latestDatetimeSaved = row.fromUTC;
+      if (!latestDatetimeSavedUTC || row.fromUTC > latestDatetimeSavedUTC) {
+        latestDatetimeSavedUTC = row.fromUTC;
       }
 
       const dateStringJST = row.fromUTC.setZone("Asia/Tokyo").toISODate();
@@ -453,7 +461,7 @@ const saveOcctoData = async (data: InterconnectorDataProcessed[]) => {
     `Inserted ${insertedRowsCount} rows for OCCTO interconnector data`
   );
 
-  return { newRows: insertedRowsCount, latestDatetimeSaved };
+  return { newRows: insertedRowsCount, latestDatetimeSavedUTC };
 };
 
 export const scrapeJob = async (scrapeType: ScrapeType) => {
@@ -462,9 +470,9 @@ export const scrapeJob = async (scrapeType: ScrapeType) => {
   const data = await scrapeOccto(scrapeType);
 
   // Load the data into the database
-  const { newRows, latestDatetimeSaved } = await saveOcctoData(data);
+  const { newRows, latestDatetimeSavedUTC } = await saveOcctoData(data);
 
   logger.info(
-    `OCCTO scraper finished, new rows: ${newRows}, latest datetime JST: ${latestDatetimeSaved?.toISO()}`
+    `OCCTO scraper finished, new rows: ${newRows}, latest datetime JST: ${latestDatetimeSavedUTC?.setZone("Asia/Tokyo")?.toISO()}`
   );
 };
