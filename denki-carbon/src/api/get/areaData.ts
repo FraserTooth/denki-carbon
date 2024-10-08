@@ -7,23 +7,10 @@ import { numberifyAreaDataRow, rTo3Dec, strToNum } from "../utils";
 import { DateTime } from "luxon";
 import {
   areaDataGetQueryParamsValidator,
+  areaDataGetResponseValidator200,
   areaDataGetResponseValidator200ElementForecast,
   areaDataGetResponseValidator200ElementHistoric,
 } from "../validators/areaData";
-
-const areaDataGetResponseValidator200 = t.Object({
-  historic: t.Array(areaDataGetResponseValidator200ElementHistoric),
-  forecast: t.Optional(t.Array(areaDataGetResponseValidator200ElementForecast)),
-});
-
-const areaDataGetResponseValidator = {
-  200: areaDataGetResponseValidator200,
-};
-
-export const areaDataGetValidator = {
-  query: areaDataGetQueryParamsValidator,
-  response: areaDataGetResponseValidator,
-};
 
 export const areaDataGetHandler = async (
   query: Static<typeof areaDataGetQueryParamsValidator>

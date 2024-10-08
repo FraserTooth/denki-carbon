@@ -1,12 +1,15 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
-import { areaDataGetHandler, areaDataGetValidator } from "./get/areaData";
+import { areaDataGetHandler } from "./get/areaData";
+import { areaDataGetValidator } from "./validators/areaData";
 import cron from "@elysiajs/cron";
 import { scrapeJob } from "../scrapers/tso";
 import { SUPPORTED_TSOS } from "../const";
 import { logger } from "../utils";
 import cors from "@elysiajs/cors";
 import { ScrapeType } from "../scrapers";
+import { overviewGetValidator } from "./validators/overview";
+import { overviewGetHandler } from "./get/overview";
 
 const app = new Elysia({ normalize: true })
   .use(
@@ -74,6 +77,7 @@ const app = new Elysia({ normalize: true })
     ({ query }) => areaDataGetHandler(query),
     areaDataGetValidator
   )
+  .get("/v1/overview", overviewGetHandler, overviewGetValidator)
   .onError((ctx) => {
     logger.error(ctx, ctx.error.name);
     return "onError";

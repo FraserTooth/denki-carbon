@@ -110,6 +110,12 @@ export const onlyPositive = (value: number | null) => {
   return value && value > 0 ? value : 0;
 };
 
+/**
+ * Get the start of the most recent half hour from a given datetime
+ *
+ * @param datetime the datetime from which to get the most recent half hour
+ * @returns the start of the most recent half hour as a DateTime
+ */
 export const startOfMostRecentHalfHour = (datetime: DateTime) => {
   return datetime
     .startOf("hour")

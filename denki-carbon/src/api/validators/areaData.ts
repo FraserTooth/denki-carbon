@@ -1,6 +1,7 @@
 import { t } from "elysia";
 import { JapanTsoName } from "../../const";
 import { DateTime } from "luxon";
+import { kWhValueValidations } from ".";
 
 export const areaDataGetQueryParamsValidator = t.Object({
   tso: t.Enum(JapanTsoName, {
@@ -51,124 +52,7 @@ export const areaDataGetResponseValidator200ElementHistoric = t.Object({
       "The end time in UTC, as an ISO 8601 string - , before Feb 2024, this will be 1 hour after timeFromJST, after Feb 2024, this will be 30 minutes after timeFromJST",
     examples: ["2024-06-23T11:30:00.000Z"],
   }),
-  totalDemandkWh: t.Nullable(
-    t.Number({
-      description: "The total demand in kWh",
-      examples: [14582500],
-    })
-  ),
-  nuclearkWh: t.Nullable(
-    t.Number({
-      description: "The nuclear power output in kWh",
-      examples: [0],
-    })
-  ),
-  allfossilkWh: t.Nullable(
-    t.Number({
-      description: "The total output of all fossil fuels in kWh",
-      examples: [10917000],
-    })
-  ),
-  lngkWh: t.Nullable(
-    t.Number({
-      description: "The LNG output in kWh",
-      examples: [7207000],
-    })
-  ),
-  coalkWh: t.Nullable(
-    t.Number({
-      description: "The coal output in kWh",
-      examples: [3136000],
-    })
-  ),
-  oilkWh: t.Nullable(
-    t.Number({
-      description: "The oil output in kWh",
-      examples: [152500],
-    })
-  ),
-  otherFossilkWh: t.Nullable(
-    t.Number({
-      description: "The output of other fossil fuels in kWh",
-      examples: [421500],
-    })
-  ),
-  hydrokWh: t.Nullable(
-    t.Number({
-      description: "The hydro power output in kWh",
-      examples: [891500],
-    })
-  ),
-  geothermalkWh: t.Nullable(
-    t.Number({
-      description: "The geothermal power output in kWh",
-      examples: [0],
-    })
-  ),
-  biomasskWh: t.Nullable(
-    t.Number({
-      description: "The biomass power output in kWh",
-      examples: [243000],
-    })
-  ),
-  solarOutputkWh: t.Nullable(
-    t.Number({
-      description: "The solar power output in kWh",
-      examples: [0],
-    })
-  ),
-  solarThrottlingkWh: t.Nullable(
-    t.Number({
-      description: "The solar power output that is being throttled in kWh",
-      examples: [0],
-    })
-  ),
-  windOutputkWh: t.Nullable(
-    t.Number({
-      description: "The wind power output in kWh",
-      examples: [35000],
-    })
-  ),
-  windThrottlingkWh: t.Nullable(
-    t.Number({
-      description: "The wind power output that is being throttled in kWh",
-      examples: [0],
-    })
-  ),
-  pumpedStoragekWh: t.Nullable(
-    t.Number({
-      description:
-        "The total generation or consumption from pumped storage in kWh - positive values are generation, negative values are consumption",
-      examples: [771000, -681000],
-    })
-  ),
-  batteryStoragekWh: t.Nullable(
-    t.Number({
-      description:
-        "The total generation or consumption from battery storage in kWh - positive values are generation, negative values are consumption",
-      examples: [246000, -127000],
-    })
-  ),
-  interconnectorskWh: t.Nullable(
-    t.Number({
-      description:
-        "The total generation or consumption from interconnectors in kWh - positive values are generation, negative values are consumption",
-      examples: [1558500, -1000000],
-    })
-  ),
-  otherkWh: t.Nullable(
-    t.Number({
-      description:
-        "The total generation or consumption from other sources in kWh - positive values are generation, negative values are consumption",
-      examples: [0],
-    })
-  ),
-  totalGenerationkWh: t.Nullable(
-    t.Number({
-      description: "The total generation + consumption in kWh",
-      examples: [14582500],
-    })
-  ),
+  ...kWhValueValidations,
   lastUpdated: t.Date({
     description:
       "The time this row of data was last updated, in UTC, in ISO 8601 format",
@@ -224,3 +108,17 @@ export const areaDataGetResponseValidator200ElementForecast = t.Object({
     examples: ["2024-06-23T13:01:03.402Z"],
   }),
 });
+
+export const areaDataGetResponseValidator200 = t.Object({
+  historic: t.Array(areaDataGetResponseValidator200ElementHistoric),
+  forecast: t.Optional(t.Array(areaDataGetResponseValidator200ElementForecast)),
+});
+
+export const areaDataGetResponseValidator = {
+  200: areaDataGetResponseValidator200,
+};
+
+export const areaDataGetValidator = {
+  query: areaDataGetQueryParamsValidator,
+  response: areaDataGetResponseValidator,
+};
