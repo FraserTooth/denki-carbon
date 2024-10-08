@@ -35,7 +35,9 @@ export default function Social(props: SocialProps) {
   // Posted in the Social Links
   const carbonIntensity = props.carbonIntensity;
   const utility = t(`utilities.${props.utility}`);
-  const hashtags: string[] = t("social.hashtags", { returnObjects: true });
+  const hashtags = t("social.hashtags", {
+    returnObjects: true,
+  }) as string[];
 
   const url = "denkicarbon.jp";
 
