@@ -4,6 +4,7 @@ import { SQL, sql } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { getTableColumns } from "drizzle-orm/utils";
 import { createPinoLogger } from "@bogeychan/elysia-logger";
+import { DateTime } from "luxon";
 
 // Generate a pretty logger for local development
 const prettyTransport = {
@@ -107,4 +108,13 @@ axiosRetry(axiosInstance, {
 
 export const onlyPositive = (value: number | null) => {
   return value && value > 0 ? value : 0;
+};
+
+export const startOfMostRecentHalfHour = (datetime: DateTime) => {
+  return datetime
+    .startOf("hour")
+    .set({
+      minute: datetime.minute >= 30 ? 30 : 0,
+    })
+    .setZone(datetime.zone ?? "UTC");
 };
