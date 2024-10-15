@@ -131,7 +131,11 @@ export default function Main() {
         )}
         <Social carbonIntensity={carbonIntensityNow} utility={utility} />
         <Divider variant="middle" />
-        <Map overviewData={overviewData}></Map>
+        {overviewData.intensities.length === 0 ? (
+          <CircularProgress />
+        ) : (
+          <Map overviewData={overviewData}></Map>
+        )}
         <Divider variant="middle" />
         <Explanation />
       </Box>
