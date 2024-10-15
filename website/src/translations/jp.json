@@ -46,6 +46,10 @@
     "linkedin": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh",
     "line": "今現在{{utility}}の発電所から排出されているC02の量は{{carbonIntensity}}gCO₂/kWh"
   },
+  "map": {
+    "title": "日本全体の現在の炭素強度",
+    "tooltip": "{{utility}}の炭素強度: {{carbonIntensity}}gCO₂/kWh"
+  },
   "graph": {
     "intensity": "炭素強度",
     "compare": "比較月",

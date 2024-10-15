@@ -46,6 +46,10 @@
     "linkedin": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh",
     "line": "The carbon intensity in the {{utility}} supply area is currently {{carbonIntensity}}gCO₂/kWh"
   },
+  "map": {
+    "title": "Current Carbon Intensity across Japan",
+    "tooltip": "{{utility}} Carbon Intensity: {{carbonIntensity}}gCO₂/kWh"
+  },
   "graph": {
     "intensity": "Carbon Intensity",
     "compare": "Compared Month",

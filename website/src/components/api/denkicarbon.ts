@@ -48,6 +48,45 @@ const defaultDenkiCarbonGetAreaData: DenkiCarbonGetAreaDataElement[] = [
   },
 ];
 
+export interface DenkiCarbonGetOverviewIntensitiesDataElement {
+  tso: string;
+  dateJST: string;
+  timeFromJST: string;
+  timeToJST: string;
+  datetimeFrom: DateTime;
+  datetimeTo: DateTime;
+  carbonIntensity: number;
+  isForecast: boolean;
+  createdAt: DateTime;
+  allAreaData?: {
+    totalDemandkWh: number;
+    nuclearkWh: number;
+    allfossilkWh: number;
+    lngkWh: number;
+    coalkWh: number;
+    oilkWh: number;
+    otherFossilkWh: number;
+    hydrokWh: number;
+    geothermalkWh: number;
+    biomasskWh: number;
+    solarOutputkWh: number;
+    solarThrottlingkWh: number;
+    windOutputkWh: number;
+    windThrottlingkWh: number;
+    pumpedStoragekWh: number;
+    batteryStoragekWh: number;
+    interconnectorskWh: number;
+    otherkWh: number;
+    totalGenerationkWh: number;
+  };
+}
+export interface DenkiCarbonGetOverviewData {
+  intensities: DenkiCarbonGetOverviewIntensitiesDataElement[];
+}
+const defaultDenkiCarbonGetAreaDataElement: DenkiCarbonGetOverviewData = {
+  intensities: [],
+};
+
 /**
  * Generate Cache for Local Browser to prevent API overuse
  *
@@ -154,10 +193,31 @@ const retriveDataDenkiCarbon = createAPIInterface<
   "v1/area_data"
 );
 
+const retrieveOverviewDenkiCarbon = createAPIInterface<
+  DenkiCarbonGetOverviewData,
+  {}
+>(
+  defaultDenkiCarbonGetAreaDataElement,
+  (raw: any): DenkiCarbonGetOverviewData => {
+    console.log("Raw Overview Data: ", raw);
+    return {
+      intensities: raw.intensities.map((element: any) => ({
+        ...element,
+        datetimeFrom: DateTime.fromISO(element.datetimeFrom),
+        datetimeTo: DateTime.fromISO(element.datetimeTo),
+        createdAt: DateTime.fromISO(element.createdAt),
+      })),
+    };
+  },
+  "v1/overview"
+);
+
 export const denkiCarbon = {
   denkiCarbon: {
     default: defaultDenkiCarbonGetAreaData,
     retrive: retriveDataDenkiCarbon,
+    overviewDefault: defaultDenkiCarbonGetAreaDataElement,
+    retrieveOverview: retrieveOverviewDenkiCarbon,
   },
 };
 export default denkiCarbon;

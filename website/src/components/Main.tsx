@@ -3,6 +3,7 @@ import Graph from "./graph/Graph";
 import Explanation from "./Explanation";
 import Title from "./Title";
 import Social from "./Social";
+import Map from "./map/Map";
 import intensity, { supportedUtilities } from "./api/denkicarbon";
 import { DateTime } from "luxon";
 
@@ -13,14 +14,8 @@ import {
   Divider,
   CircularProgress,
 } from "@material-ui/core";
+import { getCarbonIntensityColor } from "../utils";
 
-const carbonIntensityColor = (carbonIntensity: number): string => {
-  const maxIntensity = 900;
-  const hueCalc = 100 - Math.floor((carbonIntensity / maxIntensity) * 100);
-  const hue = hueCalc > 0 ? hueCalc : 0;
-  console.log(`hsl(${hue},100%,100%)`);
-  return `hsl(${hue},100%,50%)`;
-};
 const now = DateTime.now();
 // Get the start of the most recent half hour block
 const startOfLatestHalfHour = now.startOf("hour").set({
@@ -47,6 +42,9 @@ export default function Main() {
   const [carbonIntensityData, setCarbonIntensityData] = useState(
     intensity.denkiCarbon.default
   );
+  const [overviewData, setOverviewData] = useState(
+    intensity.denkiCarbon.overviewDefault
+  );
 
   // Changes to be made when utility is updated
   useEffect(() => {
@@ -61,6 +59,8 @@ export default function Main() {
       to: predictionLimit.toISO() ?? "",
       includeForecast: true,
     });
+
+    intensity.denkiCarbon.retrieveOverview(setOverviewData, utility, {});
   }, [utility]);
 
   // Changes to be made when graphDate is updated
@@ -114,7 +114,7 @@ export default function Main() {
               gutterBottom
               style={{
                 display: "inline-block",
-                color: carbonIntensityColor(carbonIntensityNow),
+                color: getCarbonIntensityColor(carbonIntensityNow),
               }}
             >
               {carbonIntensityNow}
@@ -130,6 +130,8 @@ export default function Main() {
           </div>
         )}
         <Social carbonIntensity={carbonIntensityNow} utility={utility} />
+        <Divider variant="middle" />
+        <Map overviewData={overviewData}></Map>
         <Divider variant="middle" />
         <Explanation />
       </Box>
