@@ -43,7 +43,7 @@ const getChubuCSVUrls = async (): Promise<
   // From the start of data to the start of the current month, return a url for each month
   for (
     let urlMonth = START_OF_CHUBU_LIVE_DATA;
-    urlMonth.valueOf() <= startOfCurrentMonth.valueOf();
+    urlMonth.startOf("month").valueOf() <= startOfCurrentMonth.valueOf();
     urlMonth = urlMonth.plus({ months: 1 })
   ) {
     // e.g. https://www.energia.co.jp/nw/jukyuu/sys/eria_jukyu_202404_07.csv?ver=1719750310860

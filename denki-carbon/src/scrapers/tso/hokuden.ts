@@ -42,7 +42,7 @@ const getHokudenNewCSVUrls = async (): Promise<
   // From the start of data to the start of the current month, return a url for each month
   for (
     let urlMonth = START_OF_HOKUDEN_LIVE_DATA;
-    urlMonth.valueOf() <= startOfCurrentMonth.valueOf();
+    urlMonth.startOf("month").valueOf() <= startOfCurrentMonth.valueOf();
     urlMonth = urlMonth.plus({ months: 1 })
   ) {
     // e.g. https://www.rikuden.co.jp/nw/denki-yoho/csv/eria_jukyu_202402_05.csv
