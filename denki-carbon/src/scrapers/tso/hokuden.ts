@@ -10,7 +10,7 @@ import {
   parseNewCSV,
 } from "./utils";
 
-const OLD_CSV_URL = `http://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
+const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
 const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";
 
 const OLD_CSV_FORMAT = {
