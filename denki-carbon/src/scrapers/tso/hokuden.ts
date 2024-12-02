@@ -10,7 +10,7 @@ import {
   parseNewCSV,
 } from "./utils";
 
-const OLD_CSV_URL = `https://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
+const OLD_CSV_URL = `http://www.rikuden.co.jp/nw_jyukyudata/area_jisseki.html`;
 const BASE_LIVE_CSV_URL = "https://www.rikuden.co.jp/nw/denki-yoho/csv";
 
 const OLD_CSV_FORMAT = {
@@ -42,7 +42,7 @@ const getHokudenNewCSVUrls = async (): Promise<
   // From the start of data to the start of the current month, return a url for each month
   for (
     let urlMonth = START_OF_HOKUDEN_LIVE_DATA;
-    urlMonth.month <= startOfCurrentMonth.month;
+    urlMonth.valueOf() <= startOfCurrentMonth.valueOf();
     urlMonth = urlMonth.plus({ months: 1 })
   ) {
     // e.g. https://www.rikuden.co.jp/nw/denki-yoho/csv/eria_jukyu_202402_05.csv
@@ -60,14 +60,6 @@ const parseDpToKwh = (raw: string): number => {
   const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
   // Values are in MWh, so multiply by 1000 to get kWh
   return parseFloat(cleaned) * 1000;
-};
-
-const parseAverageMWFor30minToKwh = (raw: string): number => {
-  const cleaned = raw.trim().replace(RegExp(/[^-\d]/g), "");
-  // Values are in MW, so multiply by 1000 to get kW
-  const averageKw = parseFloat(cleaned) * 1000;
-  // Multiply by hours to get kWh
-  return averageKw * (30 / 60);
 };
 
 const parseOldCSV = (csv: string[][]): AreaCSVDataProcessed[] => {

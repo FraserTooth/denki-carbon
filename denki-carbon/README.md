@@ -7,8 +7,12 @@
 - Then run the following:
 
 ```bash
+bun install
+
 bun migrate
 ```
+
+Note: you might have to append `BUN_CONFIG_REGISTRY="https://registry.npmjs.org"` before your install commands.
 
 ## Development
 
