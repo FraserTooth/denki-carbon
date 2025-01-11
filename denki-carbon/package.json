@@ -26,12 +26,12 @@
     "studio": "bun --env-file=.env.local drizzle-kit studio --config ./drizzle.config.ts --verbose"
   },
   "dependencies": {
-    "@bogeychan/elysia-logger": "^0.1.4",
-    "@elysiajs/cors": "^1.1.1",
-    "@elysiajs/cron": "^1.1.1",
-    "@elysiajs/swagger": "^1.1.6",
+    "@bogeychan/elysia-logger": "^0.1.7",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/cron": "^1.2.0",
+    "@elysiajs/swagger": "^1.2.0",
     "@tensorflow/tfjs-node": "^4.22.0",
-    "axios": "^1.7.8",
+    "axios": "^1.7.9",
     "axios-retry": "^4.5.0",
     "commander": "^12.1.0",
     "csv-parse": "^5.6.0",
@@ -43,7 +43,7 @@
     "luxon": "^3.5.0",
     "node-xlsx": "^0.24.0",
     "pg": "^8.13.1",
-    "pino": "^9.5.0",
+    "pino": "^9.6.0",
     "pino-loki": "^2.4.0",
     "yauzl-promise": "^4.0.0"
   },
@@ -56,7 +56,7 @@
     "bun-types": "latest",
     "drizzle-kit": "^0.24.2",
     "pino-pretty": "^11.3.0",
-    "prettier": "^3.4.1"
+    "prettier": "^3.4.2"
   },
   "module": "src/index.js"
 }

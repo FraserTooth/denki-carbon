@@ -10,6 +10,7 @@ import cors from "@elysiajs/cors";
 import { ScrapeType } from "../scrapers";
 import { overviewGetValidator } from "./validators/overview";
 import { overviewGetHandler } from "./get/overview";
+import { ElysiaCustomStatusResponse } from "elysia/dist/error";
 
 const app = new Elysia({ normalize: true })
   .use(
@@ -79,7 +80,12 @@ const app = new Elysia({ normalize: true })
   )
   .get("/v1/overview", overviewGetHandler, overviewGetValidator)
   .onError((ctx) => {
-    logger.error(ctx, ctx.error.name);
+    const error = ctx.error;
+    if ("name" in error) {
+      logger.error(ctx, error.message);
+    } else {
+      logger.error(ctx, "Unknown error");
+    }
     return "onError";
   })
   .listen(3000);
