@@ -11,12 +11,12 @@ export const areaDataGetQueryParamsValidator = t.Object({
   from: t.Date({
     description:
       "The start of the time range to get data for, in ISO 8601 format",
-    default: DateTime.now().minus({ hours: 2 }).startOf("hour").toISO(),
+    default: DateTime.now().minus({ hours: 2 }).startOf("hour").toUTC().toISO(),
   }),
   to: t.Date({
     description:
       "The end of the time range to get data for, in ISO 8601 format",
-    default: DateTime.now().plus({ hours: 2 }).startOf("hour").toISO(),
+    default: DateTime.now().plus({ hours: 2 }).startOf("hour").toUTC().toISO(),
   }),
   includeForecast: t.Optional(
     t.String({

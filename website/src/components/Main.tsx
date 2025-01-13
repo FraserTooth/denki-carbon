@@ -55,8 +55,8 @@ export default function Main() {
     // Fetch new data
     intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
       tso: utility,
-      from: oneDayAgo.toISO() ?? "",
-      to: predictionLimit.toISO() ?? "",
+      from: oneDayAgo.toUTC().toISO() ?? "",
+      to: predictionLimit.toUTC().toISO() ?? "",
       includeForecast: true,
     });
 
@@ -76,8 +76,8 @@ export default function Main() {
 
     intensity.denkiCarbon.retrive(setCarbonIntensityData, utility, {
       tso: utility,
-      from: from.toISO() ?? "",
-      to: to.toISO() ?? "",
+      from: from.toUTC().toISO() ?? "",
+      to: to.toUTC().toISO() ?? "",
       includeForecast: graphDate === null ? true : false,
     });
   }, [graphDate]);
