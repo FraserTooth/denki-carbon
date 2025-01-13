@@ -12,10 +12,11 @@ COPY package.json bun.lockb /temp/dev/
 RUN cd /temp/dev && BUN_CONFIG_REGISTRY="https://registry.npmjs.org" bun install --frozen-lockfile
 RUN bun test
 
-# install with --production (exclude devDependencies)
+# install
 RUN mkdir -p /temp/prod
 COPY package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+# Consider adding --production flag to the install command if you don't need devDependencies
+RUN cd /temp/prod && bun install --frozen-lockfile
 
 # copy node_modules from temp directory
 # then copy all (non-ignored) project files into the image
@@ -25,7 +26,7 @@ COPY . .
 
 # [optional] tests & build
 ENV NODE_ENV=production
-RUN bun run build
+# RUN bun run build
 
 # copy production dependencies and source code into final image
 FROM base AS release
