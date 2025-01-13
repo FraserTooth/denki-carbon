@@ -30,4 +30,10 @@ bun dev
 
 Open http://localhost:3000/docs with your browser to see the docs
 
-To run it in a dock
+To run it in a docker container use
+
+```bash
+bun up
+# or
+bun up:debug
+```
