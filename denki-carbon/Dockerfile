@@ -10,6 +10,7 @@ FROM base AS install
 RUN mkdir -p /temp/dev
 COPY package.json bun.lockb /temp/dev/
 RUN cd /temp/dev && BUN_CONFIG_REGISTRY="https://registry.npmjs.org" bun install --frozen-lockfile
+RUN bun test
 
 # install with --production (exclude devDependencies)
 RUN mkdir -p /temp/prod
@@ -24,7 +25,6 @@ COPY . .
 
 # [optional] tests & build
 ENV NODE_ENV=production
-RUN bun test
 RUN bun run build
 
 # copy production dependencies and source code into final image
