@@ -8,13 +8,13 @@ WORKDIR /usr/src/app
 # this will cache them and speed up future builds
 FROM base AS install
 RUN mkdir -p /temp/dev
-COPY package.json bun.lockb /temp/dev/
+COPY package.json bun.lock /temp/dev/
 RUN cd /temp/dev && BUN_CONFIG_REGISTRY="https://registry.npmjs.org" bun install --frozen-lockfile
 RUN bun test
 
 # install
 RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
+COPY package.json bun.lock /temp/prod/
 # Consider adding --production flag to the install command if you don't need devDependencies
 RUN cd /temp/prod && bun install --frozen-lockfile
 
